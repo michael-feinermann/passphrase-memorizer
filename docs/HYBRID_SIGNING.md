@@ -4,7 +4,7 @@ English | [Deutsch](HYBRID_SIGNING.de.md)
 
 Passphrase Memorizer supplements Apple's Developer ID signature, notarization and Gatekeeper checks with detached RSA-4096-PSS/SHA-512 and ML-DSA-87 signatures. Both algorithms must verify. The separate Hybrid Signer is a release tool and has no connection to the mnemonic app, its model, its AI worker or your passphrase.
 
-The [internal audit](SECURITY_AUDIT.md) records source checks, genuine signature interoperation, tamper tests and the exact distribution/download evidence separately. Use it to check which release artifacts have been verified.
+The [public v1.0.0 release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.0) contains all 28 assets, including the notarized Signer and twelve hybrid envelopes. Every asset was downloaded without authentication, compared with the verified originals and checked again after installation. The [internal audit](SECURITY_AUDIT.md) records the source, signature, tamper, notarization and public-download evidence separately. Signing sources are tagged [v1.0.0-hybrid.1](https://github.com/michael-feinermann/passphrase-memorizer/tree/v1.0.0-hybrid.1); the original app tag and app ZIP remain unchanged.
 
 ## Required release files
 
@@ -20,6 +20,8 @@ The complete verifier requires these four targets. Omitting the Signer is an err
 Each target has an adjacent `.khsig`, `.sha3`, `.sha3.khsig`, `.skein` and `.skein.khsig`. Thus twelve hybrid envelopes are mandatory, each containing both signatures. The two ZIPs also have conventional `.sha256` files. SHA-256, SHA3-512 and Skein-1024-1024 are public integrity hashes; a checksum alone does not authenticate its publisher. The integrity manifest and signed archive bind the expected hashes, and the verifier recomputes all three.
 
 The Signer inventory remains beside its sealed `.app` inside the signed ZIP. Detached signatures remain beside the ZIP rather than inside it. This avoids changing an already signed artifact or requiring a signature to contain itself.
+
+`Passphrase-Memorizer-1.0.0.hybrid-signatures.zip` conveniently bundles the signature files, public trust material, checker scripts and C-Skein references. It has its own SHA-256 sidecar. It is not a fifth hybrid-signature target, and that checksum does not authenticate its included checker or keys. Establish the independent trust described below before running downloaded verification code.
 
 ## Trust the public keys first
 
@@ -41,6 +43,8 @@ python3 -I Scripts/verify-hybrid-signatures.py \
 ```
 
 `--app` additionally compares the installed app with the signed inventory. Leave it out to verify the downloaded release alone. Successful complete verification reports twelve hybrid envelopes and checks both algorithms, public-key fingerprints, certificate policy, all hashes, product/version, ZIP safety and complete inventories. Apple signature, notarization and Gatekeeper checks remain separate; reproduce them with the [release verifier](../Scripts/verify-release.sh).
+
+On the verified installation, public assets and tools reside in `/Applications/Passphrase Memorizer 1.0.0.signatures`, and the separate Signer is `/Applications/Passphrase Memorizer Hybrid Signer.app`. The mnemonic app remains `/Applications/Passphrase Memorizer.app`. None of these public verification tools needs the private key volume or the AI model.
 
 ## Compute hashes or use the Signer
 
