@@ -1,0 +1,16 @@
+.build/
+build/
+DerivedData/
+.DS_Store
+*.xcuserstate
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+models/
+Models/
+*.log
+__pycache__/
+*.pyc
