@@ -1,0 +1,12 @@
+# Preserve the exact pinned upstream reference bytes, including CRLF and spaces.
+Signing/HybridSigner/Reference/** -text
+Signing/HybridSigner/Reference/ref/** -text whitespace=-trailing-space
+Signing/HybridSigner/Reference/AUTHORS.md -text whitespace=-trailing-space
+Signing/HybridSigner/Reference/LICENSE -text whitespace=-trailing-space
+Tests/Reference/Skein/brg_types.h -text whitespace=-trailing-space
+Tests/Reference/Skein/skein.c -text whitespace=-trailing-space
+Tests/Reference/Skein/skein.h -text whitespace=-trailing-space
+Tests/Reference/Skein/skein_block.c -text whitespace=-trailing-space
+Tests/Reference/Skein/skein_port.h -text whitespace=-trailing-space
+# Signatures bind bytes, so checkout must not translate their line endings.
+Signing/Releases/** -text

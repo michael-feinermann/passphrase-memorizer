@@ -14,3 +14,8 @@ Models/
 *.log
 __pycache__/
 *.pyc
+*.pfx
+*.p12
+*.enc
+*wrapping-key*.b64
+!Signing/mldsa87-public.bin

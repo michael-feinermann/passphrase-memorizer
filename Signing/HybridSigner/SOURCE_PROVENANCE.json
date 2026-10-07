@@ -1,0 +1,87 @@
+{
+  "upstream_repository": "Kalyna",
+  "upstream_commit": "218f6062ce5185408138e6bd416d85f6aa2c7795",
+  "changes": "Certificate subject and standalone project paths/name changed; public hash output added without modifying signature algorithms, formats or filesystem gates. Self-contained single-file deployment embeds managed assemblies and runtime JSON in the signed Mach-O host, with both disk self-extraction options disabled; native libraries and resource files remain separately packaged.",
+  "files": [
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/Program.cs",
+      "path": "Program.cs",
+      "upstream_sha256": "ec5d086b40fbb1b0107ff7b31d2b27df0689a7d1501723c25a06a4399d4998b8",
+      "sha256": "1b862a809849bc544738b15658fa8f2f4d7a138de8210d54e96ba6ec59f0f50c"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/HybridKeyEnvelope.cs",
+      "path": "HybridKeyEnvelope.cs",
+      "upstream_sha256": "6aaa081e31ad64d81c1555f1dee4c3f5bcb5674d0c43090773bbb6feb423f045",
+      "sha256": "6aaa081e31ad64d81c1555f1dee4c3f5bcb5674d0c43090773bbb6feb423f045"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/UsbWrappingKey.cs",
+      "path": "UsbWrappingKey.cs",
+      "upstream_sha256": "080179d72da950d9f6c90b7da2bb98d4c4470fb0e604de2444d21e5a59a926c2",
+      "sha256": "080179d72da950d9f6c90b7da2bb98d4c4470fb0e604de2444d21e5a59a926c2"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/LockedBufferTransfer.cs",
+      "path": "LockedBufferTransfer.cs",
+      "upstream_sha256": "fa1b9235ae1bd8b052981e61765e4c6e4a92ba0d29a9cd501ffcb5ba42763721",
+      "sha256": "fa1b9235ae1bd8b052981e61765e4c6e4a92ba0d29a9cd501ffcb5ba42763721"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/ReleaseKeyGenerator.cs",
+      "path": "ReleaseKeyGenerator.cs",
+      "upstream_sha256": "91a861f8e0a537cb9ed047879387f09953b9735058abe3e26c5257bad87f7732",
+      "sha256": "9787d9a550686e2144bc366779fca0109bd42e8350e2178dc000f8b124b409d2"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/MacBoundSecretFile.cs",
+      "path": "MacBoundSecretFile.cs",
+      "upstream_sha256": "58237929e1bffc92c202d64940b23afd637cd2c70feb2a2336edb62dcf432641",
+      "sha256": "58237929e1bffc92c202d64940b23afd637cd2c70feb2a2336edb62dcf432641"
+    },
+    {
+      "upstream_path": "KeepVaultMac/Packaging/HybridSigner/packages.lock.json",
+      "path": "packages.lock.json",
+      "change": "Added the Microsoft.NET.ILLink.Tasks 10.0.11 single-file compatibility build analyzer; all existing runtime dependencies unchanged. Official Microsoft author and NuGet repository signatures verified.",
+      "upstream_sha256": "445b25f57a3a97cadad21e7df8f0129d39b52eb921c87ea2335d7108a761ed03",
+      "sha256": "744771db27559112f08caea53a584b9b0cf5618f85a679bb703efd8858f44d33"
+    },
+    {
+      "upstream_path": "KalynaArchiver/Services/SecureMemory.cs",
+      "path": "SecureMemory.cs",
+      "upstream_sha256": "78bad22e1db00105c5c11d601bc3c23ed3e13cc0eb7467f2e08f42bb1f373f5e",
+      "sha256": "78bad22e1db00105c5c11d601bc3c23ed3e13cc0eb7467f2e08f42bb1f373f5e"
+    },
+    {
+      "upstream_path": "KalynaArchiver.Signing/HybridSignatureService.cs",
+      "path": "HybridSignatureService.cs",
+      "upstream_sha256": "5979ea5971e67df4e037f8878df9450c0aead66113eddbe15d093859e4f84050",
+      "sha256": "5979ea5971e67df4e037f8878df9450c0aead66113eddbe15d093859e4f84050"
+    },
+    {
+      "upstream_path": "KalynaArchiver.Signing/Mldsa87.cs",
+      "path": "Mldsa87.cs",
+      "upstream_sha256": "31df5ffaf5413cd7e18287cfc4e160fe08758ecf13ee11f8e3f8a04920c68bfb",
+      "sha256": "31df5ffaf5413cd7e18287cfc4e160fe08758ecf13ee11f8e3f8a04920c68bfb"
+    },
+    {
+      "upstream_path": "KalynaArchiver.Signing/Mldsa87Reference.cs",
+      "path": "Mldsa87Reference.cs",
+      "upstream_sha256": "5c76b4ef8a5337596772d3951bf57d49e36ce067da755f80dac10103ed8ad1a9",
+      "sha256": "5c76b4ef8a5337596772d3951bf57d49e36ce067da755f80dac10103ed8ad1a9"
+    },
+    {
+      "upstream_path": "KalynaArchiver.Signing/Sha3_512Compat.cs",
+      "path": "Sha3_512Compat.cs",
+      "upstream_sha256": "d3149fe88028185dfac184abe086219a1caa81d2fe52f0133fbdf89301acd084",
+      "sha256": "d3149fe88028185dfac184abe086219a1caa81d2fe52f0133fbdf89301acd084"
+    },
+    {
+      "upstream_path": "native/mldsa87_ref_export.c",
+      "path": "Reference/mldsa87_ref_export.c",
+      "change": "Only include paths changed to same local pinned reference files.",
+      "upstream_sha256": "96be0386e6d921b1ed3f81fa01a04a6ae18585d65f6b07e135bc67b30884811f",
+      "sha256": "907483da88c0ea191622738d4a600010db892c55a3d6f48b513d5e0fa43056e0"
+    }
+  ]
+}

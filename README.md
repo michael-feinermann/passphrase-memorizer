@@ -12,6 +12,8 @@ The app version appears after its name in the interface. Required words appear i
 
 The macOS release targets Apple Silicon (arm64) and macOS 14 or later. Download the app ZIP from [GitHub Releases](https://github.com/michael-feinermann/passphrase-memorizer/releases/latest), extract it and move `Passphrase Memorizer.app` into `/Applications`. The local model is installed separately; follow the [model setup guide](docs/LOCAL_AI.md).
 
+The release includes SHA-256, SHA3-512 and Skein-1024-1024 checksums, detached RSA-4096-PSS/SHA-512 and ML-DSA-87 signatures, and a separate local Hybrid Signer. The app ZIP, integrity manifest, bundle inventory and Signer ZIP must all pass both signatures. Follow the [hybrid verification and signing guide](docs/HYBRID_SIGNING.md), including its public-key trust requirements. The immutable [v1.0.0 integrity manifest](Signing/Releases/v1.0.0/Passphrase-Memorizer-1.0.0.integrity.txt) and detached signatures are also tracked in the repository. The signing tool is separate from inference and does not receive passphrases.
+
 The matching icon is supplied in [Assets/AppIcon-1024.png](Assets/AppIcon-1024.png); its creation brief is in [ICON_PROMPT.md](Assets/ICON_PROMPT.md).
 
 ## Using the app

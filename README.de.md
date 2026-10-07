@@ -14,6 +14,8 @@ Der macOS-Release unterstützt Apple Silicon (arm64) und macOS ab Version 14. La
 
 Das passende Icon liegt in [Assets/AppIcon-1024.png](Assets/AppIcon-1024.png). Die Gestaltungsbeschreibung steht in [ICON_PROMPT.md](Assets/ICON_PROMPT.md).
 
+Der Release enthält SHA-256-, SHA3-512- und Skein-1024-1024-Prüfsummen, abgetrennte Signaturen mit RSA-4096-PSS/SHA-512 und ML-DSA-87 sowie einen separaten lokalen Hybrid-Signer. App-ZIP, Integritätsmanifest, Bundle-Inventar und Signer-ZIP müssen jeweils beide Signaturen bestehen. Die [Anleitung zur Hybridprüfung und Signierung](docs/HYBRID_SIGNING.de.md) erklärt die erforderliche Vertrauensprüfung der öffentlichen Schlüssel. Das unveränderliche [Integritätsmanifest für v1.0.0](Signing/Releases/v1.0.0/Passphrase-Memorizer-1.0.0.integrity.txt) und die abgetrennten Signaturen sind auch im Repository enthalten. Der Signer ist von der KI-Ausführung getrennt und erhält keine Passphrasen.
+
 ## Verwendung
 
 1. Besorge ein vertrauenswürdiges lokales GGUF-Modell, bevor du ein Geheimnis eingibst. Die [Anleitung für Gemma 4 E4B und andere Modelle](docs/LOCAL_AI.de.md) beschreibt die Einrichtung.
