@@ -6,22 +6,24 @@ Passphrase Memorizer supplements Apple's Developer ID signature, notarization an
 
 The [public v1.0.0 release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.0) contains all 28 assets, including the notarized Signer and twelve hybrid envelopes. Every asset was downloaded without authentication, compared with the verified originals and checked again after installation. The [internal audit](SECURITY_AUDIT.md) records the source, signature, tamper, notarization and public-download evidence separately. Signing sources are tagged [v1.0.0-hybrid.1](https://github.com/michael-feinermann/passphrase-memorizer/tree/v1.0.0-hybrid.1); the original app tag and app ZIP remain unchanged.
 
+The current app release is 1.0.1, build 2. The unchanged notarized Signer is 1.0.0, build 1. Current checker defaults use those versions independently; pass `--app-version 1.0.0 --app-build 1` to verify the older 1.0.0 release. Historical 1.0.0 evidence above remains specific to that release.
+
 ## Required release files
 
 The complete verifier requires these four targets. Omitting the Signer is an error.
 
 | Target | What it authenticates |
 | --- | --- |
-| `Passphrase-Memorizer-1.0.0.zip` | The complete final notarized app archive |
-| `Passphrase-Memorizer-1.0.0.integrity.txt` | Product/version and all three hashes of the app and Signer archives |
-| `Passphrase-Memorizer-1.0.0.bundle-inventory.json` | Every app file, length, mode and directory |
+| `Passphrase-Memorizer-1.0.1.zip` | The complete final notarized app archive |
+| `Passphrase-Memorizer-1.0.1.integrity.txt` | Product/version and all three hashes of the app and Signer archives |
+| `Passphrase-Memorizer-1.0.1.bundle-inventory.json` | Every app file, length, mode and directory |
 | `Passphrase-Memorizer-HybridSigner-1.0.0.zip` | The separate Signer.app, runtime, reference library, licenses and canonical `signer-inventory.json` |
 
 Each target has an adjacent `.khsig`, `.sha3`, `.sha3.khsig`, `.skein` and `.skein.khsig`. Thus twelve hybrid envelopes are mandatory, each containing both signatures. The two ZIPs also have conventional `.sha256` files. SHA-256, SHA3-512 and Skein-1024-1024 are public integrity hashes; a checksum alone does not authenticate its publisher. The integrity manifest and signed archive bind the expected hashes, and the verifier recomputes all three.
 
 The Signer inventory remains beside its sealed `.app` inside the signed ZIP. Detached signatures remain beside the ZIP rather than inside it. This avoids changing an already signed artifact or requiring a signature to contain itself.
 
-`Passphrase-Memorizer-1.0.0.hybrid-signatures.zip` conveniently bundles the signature files, public trust material, checker scripts and C-Skein references. It has its own SHA-256 sidecar. It is not a fifth hybrid-signature target, and that checksum does not authenticate its included checker or keys. Establish the independent trust described below before running downloaded verification code.
+`Passphrase-Memorizer-1.0.1.hybrid-signatures.zip` conveniently bundles the signature files, public trust material, checker scripts and C-Skein references. It has its own SHA-256 sidecar. It is not a fifth hybrid-signature target, and that checksum does not authenticate its included checker or keys. Establish the independent trust described below before running downloaded verification code.
 
 ## Trust the public keys first
 
@@ -44,7 +46,7 @@ python3 -I Scripts/verify-hybrid-signatures.py \
 
 `--app` additionally compares the installed app with the signed inventory. Leave it out to verify the downloaded release alone. Successful complete verification reports twelve hybrid envelopes and checks both algorithms, public-key fingerprints, certificate policy, all hashes, product/version, ZIP safety and complete inventories. Apple signature, notarization and Gatekeeper checks remain separate; reproduce them with the [release verifier](../Scripts/verify-release.sh).
 
-On the verified installation, public assets and tools reside in `/Applications/Passphrase Memorizer 1.0.0.signatures`, and the separate Signer is `/Applications/Passphrase Memorizer Hybrid Signer.app`. The mnemonic app remains `/Applications/Passphrase Memorizer.app`. None of these public verification tools needs the private key volume or the AI model.
+On the verified installation, public assets and tools reside in `/Applications/Passphrase Memorizer 1.0.1.signatures`, and the separate Signer is `/Applications/Passphrase Memorizer Hybrid Signer.app`. The mnemonic app remains `/Applications/Passphrase Memorizer.app`. None of these public verification tools needs the private key volume or the AI model.
 
 ## Compute hashes or use the Signer
 
@@ -119,7 +121,7 @@ python3 -I Scripts/create-hybrid-release.py \
   --signer-app '/absolute/path/to/final-export/Passphrase Memorizer Hybrid Signer.app'
 ```
 
-This script accesses no private key. It requires a fresh Signer ZIP and integrity manifest, checks the notarized Signer before and after the ZIP roundtrip, and compares the Signer's three hash outputs with Python SHA-256/SHA3 and the independent C-Skein reference. It does not create the twelve hybrid envelopes.
+This script accesses no private key. It requires a fresh integrity manifest and either a new Signer ZIP or `--reuse-signer-zip /absolute/path/to/unchanged-signer.zip`. Reuse checks the complete signed inventory against the supplied notarized Signer.app and preserves the archive bytes. The script checks the notarized Signer before and after the ZIP roundtrip, and compares the Signer's three hash outputs with Python SHA-256/SHA3 and the independent C-Skein reference. It does not create the twelve hybrid envelopes.
 
 The publisher first Developer-ID signs, notarizes and staples both final app bundles. After final export, create canonical inventories outside the sealed bundles and form their ZIPs. The Signer ZIP contains its separate inventory. Write the integrity manifest using the final app and Signer hashes. Then sign the four immutable targets with the explicit product policy, never rebuild or resign a bundle afterwards, and run the independent checker and public-only negative suite. Finally verify the exact assets downloaded without authentication from GitHub, including an extracted Signer bundle's Apple seal.
 

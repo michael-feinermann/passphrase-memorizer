@@ -26,11 +26,13 @@ import zipfile
 
 
 PRODUCT_ID = "local.passphrasereminder.reminder"
-VERSION = "1.0.0"
-BUILD = "1"
+VERSION = "1.0.1"
+BUILD = "2"
+SIGNER_VERSION = "1.0.0"
+SIGNER_BUILD = "1"
 APP_NAME = "Passphrase Memorizer.app"
-STEM = "Passphrase-Memorizer-1.0.0"
-SIGNER_TARGET = "Passphrase-Memorizer-HybridSigner-1.0.0.zip"
+STEM = "Passphrase-Memorizer-" + VERSION
+SIGNER_TARGET = "Passphrase-Memorizer-HybridSigner-" + SIGNER_VERSION + ".zip"
 SIGNER_APP_NAME = "Passphrase Memorizer Hybrid Signer.app"
 SIGNER_PRODUCT_ID = "local.passphrasememorizer.hybridsigner"
 SIGNER_INVENTORY = "signer-inventory.json"
@@ -60,6 +62,27 @@ class VerificationError(Exception):
 def require(condition, message):
     if not condition:
         raise VerificationError(message)
+
+
+def validate_identity(version, build):
+    require(type(version) is str and re.fullmatch(r"(?:0|[1-9][0-9]{0,5})(?:\.(?:0|[1-9][0-9]{0,5})){2}", version),
+            "Invalid release version")
+    require(type(build) is str and re.fullmatch(r"[1-9][0-9]{0,8}", build), "Invalid release build")
+
+
+def release_targets(version=VERSION, signer_version=SIGNER_VERSION):
+    validate_identity(version, "1")
+    validate_identity(signer_version, "1")
+    stem = "Passphrase-Memorizer-" + version
+    return (stem + ".zip", stem + ".integrity.txt", stem + ".bundle-inventory.json",
+            "Passphrase-Memorizer-HybridSigner-" + signer_version + ".zip")
+
+
+def add_release_arguments(parser):
+    parser.add_argument("--app-version", "--version", dest="version", default=VERSION)
+    parser.add_argument("--app-build", "--build", dest="build", default=BUILD)
+    parser.add_argument("--signer-version", default=SIGNER_VERSION)
+    parser.add_argument("--signer-build", default=SIGNER_BUILD)
 
 
 def exact_keys(value, keys, name):
@@ -138,14 +161,16 @@ def parse_trust(data):
     return trust
 
 
-def parse_inventory(data):
+def parse_inventory(data, version=VERSION, build=BUILD):
+    validate_identity(version, build)
     return _parse_inventory(data, {"schema": "passphrase-memorizer-bundle-inventory-v1", "product_id": PRODUCT_ID,
-                                   "version": VERSION, "build": BUILD, "app_name": APP_NAME})
+                                   "version": version, "build": build, "app_name": APP_NAME})
 
 
-def parse_signer_inventory(data):
+def parse_signer_inventory(data, version=SIGNER_VERSION, build=SIGNER_BUILD):
+    validate_identity(version, build)
     return _parse_inventory(data, {"schema": "passphrase-memorizer-signer-inventory-v1", "product_id": SIGNER_PRODUCT_ID,
-                                   "version": VERSION, "build": BUILD, "app_name": SIGNER_APP_NAME})
+                                   "version": version, "build": build, "app_name": SIGNER_APP_NAME})
 
 
 def _parse_inventory(data, expected):
@@ -306,14 +331,15 @@ class PublicVerifier:
                   "-pkeyopt", "context-string:" + ML_CONTEXT, "-pkeyopt", "message-encoding:1"])
 
 
-def check_metadata(data, product_id=PRODUCT_ID, executable="MnemonicStoryApp"):
+def check_metadata(data, product_id=PRODUCT_ID, executable="MnemonicStoryApp", version=VERSION, build=BUILD):
+    validate_identity(version, build)
     try:
         metadata = plistlib.loads(data)
     except (ValueError, plistlib.InvalidFileException) as error:
         raise VerificationError("Invalid bundle metadata") from error
     require(type(metadata) is dict, "Invalid bundle metadata type")
-    expected = {"CFBundleIdentifier": product_id, "CFBundleShortVersionString": VERSION,
-                "CFBundleVersion": BUILD, "CFBundleExecutable": executable}
+    expected = {"CFBundleIdentifier": product_id, "CFBundleShortVersionString": version,
+                "CFBundleVersion": build, "CFBundleExecutable": executable}
     require(all(metadata.get(key) == value for key, value in expected.items()), "Wrong app identity, version or build")
 
 
@@ -322,14 +348,14 @@ def file_record(path, data, mode):
     return {"path": path, "size": len(data), "mode": mode, "sha512": hashlib.sha512(data).hexdigest()}
 
 
-def compare_bundle(files, directories, metadata, inventory):
+def compare_bundle(files, directories, metadata, inventory, version=VERSION, build=BUILD):
     require(sorted(files, key=lambda item: item["path"]) == inventory["files"], "Bundle file set, bytes or modes differ from signed inventory")
     require(sorted(directories) == inventory["directories"], "Bundle directories differ from signed inventory")
     require(metadata is not None, "Missing app Info.plist")
-    check_metadata(metadata)
+    check_metadata(metadata, version=version, build=build)
 
 
-def verify_zip(data, inventory):
+def verify_zip(data, inventory, version=VERSION, build=BUILD):
     files, directories, names = [], [], set()
     metadata = None
     total = 0
@@ -376,10 +402,10 @@ def verify_zip(data, inventory):
                         metadata = contents
     except (OSError, ValueError, zipfile.BadZipFile, RuntimeError, NotImplementedError) as error:
         raise VerificationError("Invalid release ZIP") from error
-    compare_bundle(files, directories, metadata, inventory)
+    compare_bundle(files, directories, metadata, inventory, version, build)
 
 
-def verify_app(app, inventory):
+def verify_app(app, inventory, version=VERSION, build=BUILD):
     app = pathlib.Path(app)
     require(app.name == APP_NAME and stat.S_ISDIR(app.lstat().st_mode), "Wrong app directory")
     files, directories = [], []
@@ -404,7 +430,7 @@ def verify_app(app, inventory):
                     metadata = contents
     except OSError as error:
         raise VerificationError("Cannot enumerate app bundle") from error
-    compare_bundle(files, directories, metadata, inventory)
+    compare_bundle(files, directories, metadata, inventory, version, build)
 
 
 def verify_single_file_bundle(content):
@@ -500,7 +526,7 @@ def verify_single_file_bundle(content):
     return entries
 
 
-def verify_signer_zip(data):
+def verify_signer_zip(data, version=SIGNER_VERSION, build=SIGNER_BUILD):
     """Check the authenticated signer archive and its canonical inner inventory.
 
     The inventory stays beside the sealed .app. Its own bytes are authenticated
@@ -582,11 +608,11 @@ def verify_signer_zip(data):
         raise VerificationError("Invalid signer ZIP") from error
     require(inventory_data is not None, "Signer canonical inventory is missing")
     require(metadata_targets <= names, "Signer AppleDouble metadata target is missing")
-    inventory = parse_signer_inventory(inventory_data)
+    inventory = parse_signer_inventory(inventory_data, version, build)
     require(sorted(files, key=lambda item: item["path"]) == inventory["files"], "Signer file set, bytes or modes differ from signed inventory")
     require(sorted(directories) == inventory["directories"], "Signer directories differ from signed inventory")
     require(metadata is not None, "Signer app metadata is missing")
-    check_metadata(metadata, SIGNER_PRODUCT_ID, SIGNER_HOST)
+    check_metadata(metadata, SIGNER_PRODUCT_ID, SIGNER_HOST, version, build)
     root = "Contents/MacOS/"
     required = {root + SIGNER_HOST, root + "libmldsa87_ref.dylib"}
     require({path for path in contents if path.startswith(root)} == required and
@@ -605,7 +631,9 @@ def verify_signer_zip(data):
     return inventory
 
 
-def verify_manifest(data, hashes, signer_hashes):
+def verify_manifest(data, hashes, signer_hashes, version=VERSION, build=BUILD, signer_version=SIGNER_VERSION):
+    validate_identity(version, build)
+    targets = release_targets(version, signer_version)
     try:
         lines = data.decode("utf-8").splitlines()
     except UnicodeError as error:
@@ -616,17 +644,21 @@ def verify_manifest(data, hashes, signer_hashes):
         key, separator, value = line.partition("=")
         require(separator and key and key not in fields, "Duplicate or invalid integrity field")
         fields[key] = value
-    expected = {"artifact": TARGETS[0], "coverage": "complete-signed-app-archive", "bundle-identifier": PRODUCT_ID,
-                "bundle-version": VERSION, "bundle-build": BUILD, "architecture": "arm64", "minimum-macos": "14.0",
+    expected = {"artifact": targets[0], "coverage": "complete-signed-app-archive", "bundle-identifier": PRODUCT_ID,
+                "bundle-version": version, "bundle-build": build, "architecture": "arm64", "minimum-macos": "14.0",
                 "signature-mode": "developer-id-notarized"}
     require(all(fields.get(key) == value for key, value in expected.items()), "Wrong integrity manifest identity or release policy")
     require(all(fields.get(key) == value for key, value in hashes.items()), "Integrity manifest ZIP hashes mismatch")
-    require(fields.get("signer-artifact") == SIGNER_TARGET, "Integrity manifest signer artifact mismatch")
+    require(fields.get("signer-artifact") == targets[3], "Integrity manifest signer artifact mismatch")
     require(all(fields.get("signer-" + key) == value for key, value in signer_hashes.items()),
             "Integrity manifest signer ZIP hashes mismatch")
 
 
-def verify_release(release_dir, trust_path, checksum_tool, openssl, app=None):
+def verify_release(release_dir, trust_path, checksum_tool, openssl, app=None, *, version=VERSION, build=BUILD,
+                   signer_version=SIGNER_VERSION, signer_build=SIGNER_BUILD):
+    validate_identity(version, build)
+    validate_identity(signer_version, signer_build)
+    targets = release_targets(version, signer_version)
     release_dir, trust_path = pathlib.Path(release_dir), pathlib.Path(trust_path)
     trust = parse_trust(read_regular(trust_path, MAX_TRUST)[0])
     rsa = read_regular(trust_path.parent / trust["rsa_spki"], MAX_CERTIFICATE)[0]
@@ -639,7 +671,7 @@ def verify_release(release_dir, trust_path, checksum_tool, openssl, app=None):
         require(verifier.hashes(ml) == trust["mldsa_public_key_hashes"], "ML-DSA public key fingerprint mismatch")
         ml_path = verifier.snapshot(ml_der, ".ml-spki.der")
         artifacts, hashes = {}, {}
-        for name, limit in zip(TARGETS, TARGET_LIMITS):
+        for name, limit in zip(targets, TARGET_LIMITS):
             data = read_regular(release_dir / name, limit)[0]
             artifacts[name] = data
             hashes[name] = verifier.hashes(data)
@@ -650,17 +682,17 @@ def verify_release(release_dir, trust_path, checksum_tool, openssl, app=None):
                 expected = (hashes[name][algorithm].upper() + "\n").encode("ascii")
                 require(hmac.compare_digest(digest_data, expected), "Digest sidecar contents mismatch: " + digest_name)
                 verifier.verify(read_regular(release_dir / (digest_name + ".khsig"), MAX_SIDECAR)[0], digest_data, rsa, ml_path)
-        inventory = parse_inventory(artifacts[TARGETS[2]])
-        verify_manifest(artifacts[TARGETS[1]], hashes[TARGETS[0]], hashes[SIGNER_TARGET])
-        verify_zip(artifacts[TARGETS[0]], inventory)
-        verify_signer_zip(artifacts[SIGNER_TARGET])
-        for name in (TARGETS[0], SIGNER_TARGET):
+        inventory = parse_inventory(artifacts[targets[2]], version, build)
+        verify_manifest(artifacts[targets[1]], hashes[targets[0]], hashes[targets[3]], version, build, signer_version)
+        verify_zip(artifacts[targets[0]], inventory, version, build)
+        verify_signer_zip(artifacts[targets[3]], signer_version, signer_build)
+        for name in (targets[0], targets[3]):
             expected = (hashes[name]["sha256"] + "  " + name + "\n").encode("ascii")
             require(hmac.compare_digest(read_regular(release_dir / (name + ".sha256"), 1024)[0], expected),
                     "SHA-256 archive sidecar mismatch: " + name)
         if app is not None:
-            verify_app(app, inventory)
-    return {"signatures": len(TARGETS) * 3, "files": len(inventory["files"]), "directories": len(inventory["directories"])}
+            verify_app(app, inventory, version, build)
+    return {"signatures": len(targets) * 3, "files": len(inventory["files"]), "directories": len(inventory["directories"])}
 
 
 def main():
@@ -672,16 +704,19 @@ def main():
                         help="Trusted Skein C-reference wrapper: Scripts/skein-reference-checksum.sh")
     parser.add_argument("--openssl", default=shutil.which("openssl"))
     parser.add_argument("--app", type=pathlib.Path, help="Also verify the installed app's exact files, modes and directories")
+    add_release_arguments(parser)
     args = parser.parse_args()
     try:
         require(args.openssl is not None, "OpenSSL 3.5 or newer is required")
-        result = verify_release(args.release_dir, args.trust, args.checksum_tool, args.openssl, args.app)
+        result = verify_release(args.release_dir, args.trust, args.checksum_tool, args.openssl, args.app,
+                                version=args.version, build=args.build, signer_version=args.signer_version,
+                                signer_build=args.signer_build)
     except (VerificationError, UnicodeError, OSError) as error:
         print("Hybrid release verification FAILED: " + str(error), file=sys.stderr)
         return 1
     print("Hybrid release verification passed: RSA-4096-PSS/SHA-512 AND ML-DSA-87 for all 12 signed artifacts.")
     print("Signed bundle inventory: %d files, %d directories; product %s, version %s, build %s." %
-          (result["files"], result["directories"], PRODUCT_ID, VERSION, BUILD))
+          (result["files"], result["directories"], PRODUCT_ID, args.version, args.build))
     if args.app:
         print("Installed app matches the signed inventory, including file permissions and empty directories.")
     print("Detached release signatures are external; the app's runtime integrity checks continue to use Apple code signing.")

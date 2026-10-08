@@ -230,7 +230,7 @@ struct MnemonicAssistantView: View {
                     .foregroundStyle(StoryPalette.secondaryText)
                     .lineLimit(2)
                     .truncationMode(.middle)
-                Text(tr("Die Auswahl gilt nur für diese Sitzung.", "Selection lasts for this session only."))
+                Text(tr("Der Modellpfad wird gespeichert und beim Start erneut geprüft.", "The model path is saved and checked again at startup."))
                     .storyFont()
                     .foregroundStyle(StoryPalette.mutedText)
             }
@@ -378,8 +378,8 @@ struct MnemonicAssistantView: View {
             .fixedSize(horizontal: false, vertical: true)
             if showSecurityDetails {
                 Text(tr(
-                    "Die App überschreibt ihre eigenen geheimen Puffer und beendet den isolierten KI-Prozess. Bereits von Swift, macOS oder der Anzeige erzeugte Kopien lassen sich nicht garantiert unwiderruflich löschen. Erzwungenes Beenden kann die Bereinigung verhindern. Gespeichert werden ausschließlich die gewählte App-Sprache und die Fenstergröße.",
-                    "The app overwrites its owned secret buffers and terminates the isolated AI process. Copies already created by Swift, macOS, or rendering cannot be guaranteed to be erased irrevocably. Forced termination may prevent cleanup. Only the selected app language and window size are saved."
+                    "Die App überschreibt ihre eigenen geheimen Puffer und beendet den isolierten KI-Prozess. Bereits von Swift, macOS oder der Anzeige erzeugte Kopien lassen sich nicht garantiert unwiderruflich löschen. Erzwungenes Beenden kann die Bereinigung verhindern. Gespeichert werden ausschließlich die gewählte App-Sprache, die Fenstergröße und der lokale Modellpfad.",
+                    "The app overwrites its owned secret buffers and terminates the isolated AI process. Copies already created by Swift, macOS, or rendering cannot be guaranteed to be erased irrevocably. Forced termination may prevent cleanup. Only the selected app language, window size and local model path are saved."
                 ))
                 .storyFont()
                 .foregroundStyle(StoryPalette.secondaryText)

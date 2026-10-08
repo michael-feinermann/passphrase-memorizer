@@ -4,7 +4,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ "$#" == 0 ]]; then
     APP_PATH="$PROJECT_DIR/build/Passphrase Memorizer.app"
-    ZIP_PATH="$PROJECT_DIR/build/Passphrase-Memorizer-1.0.0.zip"
+    ZIP_PATH="$PROJECT_DIR/build/Passphrase-Memorizer-1.0.1.zip"
 elif [[ "$#" == 1 || "$#" == 2 ]]; then
     APP_PATH="$1"; ZIP_PATH="${2:-}"
 else echo "Usage: $0 [APP_PATH [ZIP_PATH]]" >&2; exit 64
@@ -35,7 +35,7 @@ with (app / "Contents/Info.plist").open("rb") as stream:
 expected = {"CFBundleIdentifier": "local.passphrasereminder.reminder", "CFBundleExecutable": "MnemonicStoryApp",
             "CFBundleDisplayName": "Passphrase Memorizer", "CFBundleName": "Passphrase Memorizer",
             "CFBundleIconFile": "AppIcon",
-            "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "1", "LSMinimumSystemVersion": "14.0",
+            "CFBundleShortVersionString": "1.0.1", "CFBundleVersion": "2", "LSMinimumSystemVersion": "14.0",
             "CFBundleLocalizations": ["en", "de"], "NSSupportsAutomaticTermination": False,
             "NSSupportsSuddenTermination": False}
 for key, value in expected.items():

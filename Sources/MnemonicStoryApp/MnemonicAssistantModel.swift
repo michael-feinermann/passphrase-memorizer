@@ -41,6 +41,7 @@ final class MnemonicAssistantModel: ObservableObject {
         language = defaults.string(forKey: "preferredLanguage").flatMap(AppLanguage.init(rawValue:)) ?? .english
         lexicon = try? PhraseLexicon()
         if lexicon == nil { error = language.text("Wortlistenprüfung fehlgeschlagen.", "Word-list verification failed.") }
+        restoreModelLocation()
     }
     var hasPhrase: Bool { phrase != nil && phrase?.storage.isCleared == false }
     var hasModel: Bool { modelURL != nil }
@@ -82,18 +83,77 @@ final class MnemonicAssistantModel: ObservableObject {
         panel.title = language.text("Lokales GGUF-Modell auswählen", "Choose local GGUF model")
         defer { purgePanelNavigationPreferences() }
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        useModel(at: url)
+    }
+
+    @discardableResult
+    func useModel(at url: URL) -> Bool {
+        guard !terminated else { return false }
+        guard let localURL = Self.validatedModelURL(url) else {
+            error = language.text("Wähle eine vollständig lokale, reguläre GGUF-Datei ohne Verknüpfung oder Cloud-Speicher.", "Choose a fully local, regular GGUF file without links or cloud storage.")
+            return false
+        }
+        cancel()
+        modelURL = localURL; modelName = localURL.lastPathComponent; error = nil
+        defaults.set(localURL.path, forKey: AppPreferences.modelPathKey)
+        purgePanelNavigationPreferences()
+        return true
+    }
+
+    private func restoreModelLocation() {
+        guard let stored = defaults.object(forKey: AppPreferences.modelPathKey) else { return }
+        guard let path = stored as? String, path.hasPrefix("/"), path.utf8.count <= 4_096,
+              !path.utf8.contains(where: { $0 < 32 || $0 == 127 }) else {
+            defaults.removeObject(forKey: AppPreferences.modelPathKey)
+            reportUnavailableSavedModel()
+            return
+        }
+        if let url = Self.validatedModelURL(URL(fileURLWithPath: path)) {
+            modelURL = url; modelName = url.lastPathComponent
+        } else {
+            // Keep a valid location for a temporarily disconnected local disk.
+            // Each startup validates the file again before enabling generation.
+            reportUnavailableSavedModel()
+        }
+    }
+
+    private func reportUnavailableSavedModel() {
+        if error == nil {
+            error = language.text("Das zuletzt gewählte Modell ist nicht verfügbar oder nicht mehr sicher lokal. Wähle die GGUF-Datei erneut aus.", "The last selected model is unavailable or is no longer safely local. Choose the GGUF file again.")
+        }
+    }
+
+    private static func validatedModelURL(_ url: URL) -> URL? {
+        guard url.isFileURL, url.host == nil || url.host == "" || url.host == "localhost",
+              url.path.hasPrefix("/"), url.path.utf8.count <= 4_096,
+              !url.path.utf8.contains(where: { $0 < 32 || $0 == 127 }), url.pathExtension == "gguf" else { return nil }
+        let normalized = url.standardizedFileURL
+        let canonical = normalized.resolvingSymlinksInPath()
+        let path = canonical.path.lowercased()
+        guard normalized.path == canonical.path, !path.contains("/library/cloudstorage/"),
+              !path.contains("/mobile documents/") else { return nil }
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .volumeIsLocalKey, .isUbiquitousItemKey]
         var fileInfo = stat()
-        let canonical = url.resolvingSymlinksInPath()
-        let blockedProvider = canonical.path.contains("/Library/CloudStorage/") || canonical.path.contains("/Library/Mobile Documents/")
-        guard let value = try? url.resourceValues(forKeys: keys), value.isRegularFile == true,
+        guard let value = try? normalized.resourceValues(forKeys: keys), value.isRegularFile == true,
               value.isSymbolicLink != true, value.volumeIsLocal == true,
-              value.isUbiquitousItem != true, !blockedProvider,
-              lstat(url.path, &fileInfo) == 0, (fileInfo.st_flags & UInt32(SF_DATALESS)) == 0,
-              (value.fileSize ?? 0) > 4, url.pathExtension.lowercased() == "gguf" else {
-            error = language.text("Wähle eine reguläre GGUF-Datei auf einem lokalen Datenträger.", "Choose a regular GGUF file on a local disk."); return
-        }
-        modelURL = url; modelName = url.lastPathComponent; error = nil
+              value.isUbiquitousItem != true, lstat(normalized.path, &fileInfo) == 0,
+              (fileInfo.st_flags & UInt32(SF_DATALESS)) == 0 else { return nil }
+        let descriptor = open(normalized.path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+        var opened = stat(), current = stat(), filesystem = statfs()
+        guard fstat(descriptor, &opened) == 0, (opened.st_mode & S_IFMT) == S_IFREG,
+              opened.st_dev == fileInfo.st_dev, opened.st_ino == fileInfo.st_ino,
+              opened.st_size >= 24, opened.st_size <= (Int64(32) << 30),
+              (opened.st_flags & UInt32(SF_DATALESS)) == 0,
+              fstatfs(descriptor, &filesystem) == 0, (filesystem.f_flags & UInt32(MNT_LOCAL)) != 0 else { return nil }
+        var magic = [UInt8](repeating: 0, count: 4)
+        let readCount = magic.withUnsafeMutableBytes { pread(descriptor, $0.baseAddress, $0.count, 0) }
+        guard readCount == magic.count, magic == Array("GGUF".utf8),
+              lstat(normalized.path, &current) == 0, current.st_dev == opened.st_dev,
+              current.st_ino == opened.st_ino, current.st_size == opened.st_size,
+              current.st_flags == opened.st_flags, normalized.resolvingSymlinksInPath().path == normalized.path else { return nil }
+        return normalized
     }
     private func purgePanelNavigationPreferences() {
         // Includes NSNav*, NSOSP* bookmarks, GoToSheet and SwiftUI frame keys.
@@ -102,6 +162,11 @@ final class MnemonicAssistantModel: ObservableObject {
     }
     func generate() {
         guard canGenerate, let phrase, let modelURL else { return }
+        guard Self.validatedModelURL(modelURL) != nil else {
+            self.modelURL = nil; modelName = nil
+            error = language.text("Das gewählte Modell ist nicht mehr sicher lokal verfügbar. Wähle die GGUF-Datei erneut aus.", "The selected model is no longer safely available locally. Choose the GGUF file again.")
+            return
+        }
         guard RuntimeGuard.current(), let executable = runnerURL(), RuntimeGuard.validateRunner(executable) else {
             error = language.text("Signatur oder gesicherte Laufzeitprüfung fehlgeschlagen. Starte das signierte App-Bundle ohne Debugger.", "Signature or secure runtime verification failed. Start the signed app bundle without a debugger."); return
         }

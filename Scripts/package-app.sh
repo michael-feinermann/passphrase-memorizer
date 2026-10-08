@@ -3,7 +3,7 @@ set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_PATH="$PROJECT_DIR/build/Passphrase Memorizer.app"
-ZIP_PATH="$PROJECT_DIR/build/Passphrase-Memorizer-1.0.0.zip"
+ZIP_PATH="$PROJECT_DIR/build/Passphrase-Memorizer-1.0.1.zip"
 DEVELOPMENT=0
 if [[ "$#" == 1 && "$1" == "--dev" ]]; then DEVELOPMENT=1
 elif [[ "$#" != 0 ]]; then echo "Usage: $0 [--dev]" >&2; exit 64

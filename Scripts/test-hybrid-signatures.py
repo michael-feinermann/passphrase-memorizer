@@ -74,7 +74,24 @@ def main():
     parser.add_argument("--checksum-tool", required=True, type=pathlib.Path)
     parser.add_argument("--openssl", default=shutil.which("openssl"))
     parser.add_argument("--app", type=pathlib.Path, default=pathlib.Path("/Applications") / V.APP_NAME)
+    V.add_release_arguments(parser)
     args = parser.parse_args()
+    identity = dict(version=args.version, build=args.build,
+                    signer_version=args.signer_version, signer_build=args.signer_build)
+    targets = V.release_targets(args.version, args.signer_version)
+    signer_target = targets[3]
+    def verify_release(*positional):
+        return V.verify_release(*positional, **identity)
+    def verify_manifest(*positional):
+        return V.verify_manifest(*positional, version=args.version, build=args.build, signer_version=args.signer_version)
+    def verify_signer_zip(data):
+        return V.verify_signer_zip(data, args.signer_version, args.signer_build)
+    def parse_inventory(data):
+        return V.parse_inventory(data, args.version, args.build)
+    def verify_zip(data, inventory):
+        return V.verify_zip(data, inventory, args.version, args.build)
+    def verify_app(app, inventory):
+        return V.verify_app(app, inventory, args.version, args.build)
     checks = Checks()
     release = args.release_dir.resolve()
     trust_path = args.trust.resolve()
@@ -83,14 +100,14 @@ def main():
     rsa = V.read_regular(trust_path.parent / trust["rsa_spki"], V.MAX_CERTIFICATE)[0]
     ml = V.read_regular(trust_path.parent / trust["mldsa_public_key"], 2592)[0]
     artifacts = {name: V.read_regular(release / name, bound)[0]
-                 for name, bound in zip(V.TARGETS, V.TARGET_LIMITS)}
-    inventory = V.parse_inventory(artifacts[V.TARGETS[2]])
-    primary = artifacts[V.TARGETS[0]]
-    sidecar = V.read_regular(release / (V.TARGETS[0] + ".khsig"), V.MAX_SIDECAR)[0]
+                 for name, bound in zip(targets, V.TARGET_LIMITS)}
+    inventory = parse_inventory(artifacts[targets[2]])
+    primary = artifacts[targets[0]]
+    sidecar = V.read_regular(release / (targets[0] + ".khsig"), V.MAX_SIDECAR)[0]
 
     with tempfile.TemporaryDirectory(prefix="passphrase-memorizer-public-tests-") as temporary:
         temporary = pathlib.Path(temporary)
-        checks.accepts("real twelve-signature release and installed app", lambda: V.verify_release(
+        checks.accepts("real twelve-signature release and installed app", lambda: verify_release(
             release, trust_path, args.checksum_tool, args.openssl, args.app))
         public = V.PublicVerifier(args.openssl, args.checksum_tool, temporary / "crypto")
         public.temporary.mkdir()
@@ -108,7 +125,7 @@ def main():
         other_ml = public.snapshot(V.mldsa_spki(flip(ml, 0)), ".other-ml-spki.der")
         checks.rejects("wrong trusted ML key", lambda: public.verify(sidecar, primary, rsa, other_ml))
 
-        for target in V.TARGETS:
+        for target in targets:
             for suffix in ("", ".sha3", ".skein"):
                 name = target + suffix
                 data = V.read_regular(release / name, V.MAX_ZIP)[0]
@@ -160,11 +177,11 @@ def main():
                                   ("inventory app", "app_name", "Old.app")):
             candidate = copy.deepcopy(inventory)
             candidate[field] = value
-            checks.rejects(name, lambda candidate=candidate: V.parse_inventory(V.canonical_json(candidate)))
+            checks.rejects(name, lambda candidate=candidate: parse_inventory(V.canonical_json(candidate)))
         candidate = copy.deepcopy(inventory)
         candidate["unexpected"] = True
-        checks.rejects("unknown inventory key", lambda: V.parse_inventory(V.canonical_json(candidate)))
-        checks.rejects("noncanonical inventory whitespace", lambda: V.parse_inventory(json.dumps(inventory).encode()))
+        checks.rejects("unknown inventory key", lambda: parse_inventory(V.canonical_json(candidate)))
+        checks.rejects("noncanonical inventory whitespace", lambda: parse_inventory(json.dumps(inventory).encode()))
         for label, mutate in (
                 ("duplicate file", lambda x: x["files"].append(copy.deepcopy(x["files"][0]))),
                 ("unsorted files", lambda x: x["files"].reverse()),
@@ -179,11 +196,11 @@ def main():
                 ("unknown file key", lambda x: x["files"][0].update(extra=1))):
             candidate = copy.deepcopy(inventory)
             mutate(candidate)
-            checks.rejects("inventory " + label, lambda candidate=candidate: V.parse_inventory(V.canonical_json(candidate)))
+            checks.rejects("inventory " + label, lambda candidate=candidate: parse_inventory(V.canonical_json(candidate)))
         for unsafe in ("../file", "/file", "a//b", "a/./b", "a\\b", "a\0b", "ä", "a:b"):
             checks.rejects("unsafe path " + repr(unsafe), lambda unsafe=unsafe: V.safe_path(unsafe))
 
-        checks.accepts("actual signed ZIP including ditto metadata", lambda: V.verify_zip(primary, inventory))
+        checks.accepts("actual signed ZIP including ditto metadata", lambda: verify_zip(primary, inventory))
         # Tests of structure compare use the authenticated inventory directly;
         # an attacker also has to pass the outer ZIP signature in normal use.
         first_file = next(item["path"] for item in inventory["files"] if item["size"] > 0 and item["path"] != "Contents/Info.plist")
@@ -201,7 +218,7 @@ def main():
         ]
         for label, mutate in mutations:
             candidate = altered_zip(primary, mutate)
-            checks.rejects(label, lambda candidate=candidate: V.verify_zip(candidate, inventory))
+            checks.rejects(label, lambda candidate=candidate: verify_zip(candidate, inventory))
         for label, path, mode in (("extra ZIP file", V.APP_NAME + "/extra", stat.S_IFREG | 0o644),
                                  ("extra ZIP directory", V.APP_NAME + "/empty/", stat.S_IFDIR | 0o755),
                                  ("ZIP symlink", V.APP_NAME + "/link", stat.S_IFLNK | 0o777),
@@ -213,40 +230,40 @@ def main():
             item.create_system = 3
             item.external_attr = mode << 16
             candidate = altered_zip(primary, lambda e, item=item: e.append((item, b"")))
-            checks.rejects(label, lambda candidate=candidate: V.verify_zip(candidate, inventory))
+            checks.rejects(label, lambda candidate=candidate: verify_zip(candidate, inventory))
 
         copied_app = temporary / V.APP_NAME
         shutil.copytree(args.app, copied_app, symlinks=True)
-        checks.accepts("copied actual app", lambda: V.verify_app(copied_app, inventory))
+        checks.accepts("copied actual app", lambda: verify_app(copied_app, inventory))
         changed = copied_app / first_file
         original = changed.read_bytes()
         original_mode = stat.S_IMODE(changed.stat().st_mode)
         changed.write_bytes(flip(original, 0))
-        checks.rejects("changed installed file", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("changed installed file", lambda: verify_app(copied_app, inventory))
         changed.write_bytes(original)
         changed.chmod(original_mode ^ 0o111)
-        checks.rejects("changed executable permissions", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("changed executable permissions", lambda: verify_app(copied_app, inventory))
         changed.chmod(0o4755)
-        checks.rejects("setuid permission", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("setuid permission", lambda: verify_app(copied_app, inventory))
         changed.chmod(original_mode)
         changed.unlink()
-        checks.rejects("missing installed file", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("missing installed file", lambda: verify_app(copied_app, inventory))
         changed.write_bytes(original)
         changed.chmod(original_mode)
         extra = copied_app / "extra"
         extra.write_bytes(b"public fixture")
-        checks.rejects("extra installed file", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("extra installed file", lambda: verify_app(copied_app, inventory))
         extra.unlink()
         extra.mkdir()
-        checks.rejects("extra empty installed directory", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("extra empty installed directory", lambda: verify_app(copied_app, inventory))
         extra.rmdir()
         missing_directory = copied_app / first_dir
         parked_directory = temporary / "parked-public-directory"
         shutil.move(missing_directory, parked_directory)
-        checks.rejects("missing installed directory", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("missing installed directory", lambda: verify_app(copied_app, inventory))
         shutil.move(parked_directory, missing_directory)
         extra.symlink_to(changed)
-        checks.rejects("installed symlink", lambda: V.verify_app(copied_app, inventory))
+        checks.rejects("installed symlink", lambda: verify_app(copied_app, inventory))
         extra.unlink()
         checks.rejects("public input size bound", lambda: V.read_regular(changed, 0))
         extra.symlink_to(changed)
@@ -254,24 +271,24 @@ def main():
         extra.unlink()
 
         hashes = public.hashes(primary)
-        signer_hashes = public.hashes(artifacts[V.SIGNER_TARGET])
-        checks.accepts("linked manifest hashes and product", lambda: V.verify_manifest(artifacts[V.TARGETS[1]], hashes, signer_hashes))
+        signer_hashes = public.hashes(artifacts[signer_target])
+        checks.accepts("linked manifest hashes and product", lambda: verify_manifest(artifacts[targets[1]], hashes, signer_hashes))
         for field, value in (("bundle-build", "0"), ("bundle-version", "0.9.9"), ("bundle-identifier", "other"),
                              ("signature-mode", "local-ad-hoc"), ("sha256", "0" * 64), ("sha3-512", "0" * 128),
                              ("skein-1024-1024", "0" * 256), ("signer-artifact", "other.zip"),
                              ("signer-sha256", "0" * 64), ("signer-sha3-512", "0" * 128),
                              ("signer-skein-1024-1024", "0" * 256)):
-            lines = artifacts[V.TARGETS[1]].decode().splitlines()
+            lines = artifacts[targets[1]].decode().splitlines()
             candidate = ("\n".join(field + "=" + value if line.startswith(field + "=") else line for line in lines) + "\n").encode()
-            checks.rejects("manifest " + field, lambda candidate=candidate: V.verify_manifest(candidate, hashes, signer_hashes))
+            checks.rejects("manifest " + field, lambda candidate=candidate: verify_manifest(candidate, hashes, signer_hashes))
 
-        checks.accepts("actual authenticated offline signer archive", lambda: V.verify_signer_zip(artifacts[V.SIGNER_TARGET]))
+        checks.accepts("actual authenticated offline signer archive", lambda: verify_signer_zip(artifacts[signer_target]))
         for label, mutate in (
                 ("signer apphost missing", lambda e: e.__setitem__(slice(None), [(i, d) for i, d in e if i.filename != V.SIGNER_APP_NAME + "/Contents/MacOS/" + V.SIGNER_HOST])),
                 ("signer source provenance missing", lambda e: e.__setitem__(slice(None), [(i, d) for i, d in e if i.filename != V.SIGNER_APP_NAME + "/Contents/Resources/SOURCE_PROVENANCE.json"])),
                 ("signer ML reference missing", lambda e: e.__setitem__(slice(None), [(i, d) for i, d in e if i.filename != V.SIGNER_APP_NAME + "/Contents/MacOS/libmldsa87_ref.dylib"]))):
-            candidate = altered_zip(artifacts[V.SIGNER_TARGET], mutate)
-            checks.rejects(label, lambda candidate=candidate: V.verify_signer_zip(candidate))
+            candidate = altered_zip(artifacts[signer_target], mutate)
+            checks.rejects(label, lambda candidate=candidate: verify_signer_zip(candidate))
         for label, path, mode in (
                 ("signer symlink", V.SIGNER_APP_NAME + "/link", stat.S_IFLNK | 0o777),
                 ("signer traversal", V.SIGNER_APP_NAME + "/../escape", stat.S_IFREG | 0o644),
@@ -279,8 +296,8 @@ def main():
             item = zipfile.ZipInfo(path)
             item.create_system = 3
             item.external_attr = mode << 16
-            candidate = altered_zip(artifacts[V.SIGNER_TARGET], lambda e, item=item: e.append((item, b"public fixture")))
-            checks.rejects(label, lambda candidate=candidate: V.verify_signer_zip(candidate))
+            candidate = altered_zip(artifacts[signer_target], lambda e, item=item: e.append((item, b"public fixture")))
+            checks.rejects(label, lambda candidate=candidate: verify_signer_zip(candidate))
 
         copied_release = temporary / "release"
         copied_trust = temporary / "trust"
@@ -288,36 +305,36 @@ def main():
         copied_trust.mkdir()
         for name in (trust_path.name, trust["rsa_spki"], trust["mldsa_public_key"]):
             shutil.copy2(trust_path.parent / name, copied_trust / name)
-        for target in V.TARGETS:
+        for target in targets:
             for suffix in ("", ".sha3", ".skein"):
                 signature = copied_release / (target + suffix + ".khsig")
                 saved = signature.read_bytes()
                 signature.unlink()
-                checks.rejects("missing required signature " + target + suffix, lambda: V.verify_release(
+                checks.rejects("missing required signature " + target + suffix, lambda: verify_release(
                     copied_release, copied_trust / trust_path.name, args.checksum_tool, args.openssl))
                 signature.write_bytes(saved)
             for suffix in (".sha3", ".skein"):
                 digest_path = copied_release / (target + suffix)
                 saved = digest_path.read_bytes()
                 digest_path.write_bytes(saved.lower())
-                checks.rejects("noncanonical digest " + target + suffix, lambda: V.verify_release(
+                checks.rejects("noncanonical digest " + target + suffix, lambda: verify_release(
                     copied_release, copied_trust / trust_path.name, args.checksum_tool, args.openssl))
                 digest_path.write_bytes(saved)
         for key in (trust["rsa_spki"], trust["mldsa_public_key"]):
             key_path = copied_trust / key
             saved = key_path.read_bytes()
             key_path.write_bytes(flip(saved, -1))
-            checks.rejects("changed public trust key " + key, lambda: V.verify_release(
+            checks.rejects("changed public trust key " + key, lambda: verify_release(
                 copied_release, copied_trust / trust_path.name, args.checksum_tool, args.openssl))
             key_path.write_bytes(saved)
-        for name in (V.TARGETS[0], V.SIGNER_TARGET):
+        for name in (targets[0], signer_target):
             path = copied_release / (name + ".sha256")
             saved = path.read_bytes()
             path.write_bytes(b"0" * 64 + b"  " + name.encode() + b"\n")
-            checks.rejects("changed SHA-256 sidecar " + name, lambda: V.verify_release(
+            checks.rejects("changed SHA-256 sidecar " + name, lambda: verify_release(
                 copied_release, copied_trust / trust_path.name, args.checksum_tool, args.openssl))
             path.write_bytes(saved)
-        checks.accepts("complete restored public fixture", lambda: V.verify_release(
+        checks.accepts("complete restored public fixture", lambda: verify_release(
             copied_release, copied_trust / trust_path.name, args.checksum_tool, args.openssl))
 
     print("Hybrid verification tests passed: %d checks (%d positive, %d negative)." %

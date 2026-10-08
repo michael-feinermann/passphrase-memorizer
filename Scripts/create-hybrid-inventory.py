@@ -10,10 +10,16 @@ import json
 import os
 import pathlib
 import plistlib
+import re
 import stat
 
 
-def inventory(app, signer=False):
+def inventory(app, signer=False, version=None, build=None):
+    version = version if version is not None else ("1.0.0" if signer else "1.0.1")
+    build = build if build is not None else ("1" if signer else "2")
+    if (type(version) is not str or not re.fullmatch(r"(?:0|[1-9][0-9]{0,5})(?:\.(?:0|[1-9][0-9]{0,5})){2}", version)
+            or type(build) is not str or not re.fullmatch(r"[1-9][0-9]{0,8}", build)):
+        raise ValueError("Invalid release version or build.")
     if app.is_symlink() or not app.is_dir():
         raise ValueError("The app must be a real directory.")
     directories = []
@@ -54,8 +60,8 @@ def inventory(app, signer=False):
     info = plistlib.loads(metadata)
     expected = {
         "CFBundleIdentifier": "local.passphrasememorizer.hybridsigner" if signer else "local.passphrasereminder.reminder",
-        "CFBundleShortVersionString": "1.0.0",
-        "CFBundleVersion": "1",
+        "CFBundleShortVersionString": version,
+        "CFBundleVersion": build,
         "CFBundleExecutable": "PassphraseMemorizer.HybridSigner" if signer else "MnemonicStoryApp",
     }
     for key, value in expected.items():
@@ -79,10 +85,12 @@ def main():
     parser.add_argument("--app", required=True, type=pathlib.Path)
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--signer", action="store_true", help="Create signer-inventory.json beside the final signer .app")
+    parser.add_argument("--version", help="Expected version; defaults to app 1.0.1 or signer 1.0.0")
+    parser.add_argument("--build", help="Expected build; defaults to app 2 or signer 1")
     args = parser.parse_args()
     if args.output.resolve().is_relative_to(args.app.resolve()):
         raise ValueError("The inventory must be stored outside the app bundle.")
-    data = inventory(args.app, signer=args.signer)
+    data = inventory(args.app, signer=args.signer, version=args.version, build=args.build)
     with args.output.open("x", encoding="utf-8") as stream:
         stream.write(json.dumps(data, ensure_ascii=True, sort_keys=True, separators=(",", ":")) + "\n")
     print("Created public inventory: %d files, %d directories." % (len(data["files"]), len(data["directories"])))

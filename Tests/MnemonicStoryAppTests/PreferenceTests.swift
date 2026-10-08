@@ -14,6 +14,7 @@ import XCTest
         try withDomain { defaults, name in
             defaults.setPersistentDomain([
                 "preferredLanguage": "de", "windowWidth": 940.0, "windowHeight": 880.0,
+                "modelPath": "/PUBLIC/LOCAL/MODEL.gguf",
                 "NSOSPLastRootDirectory": Data("PUBLIC BOOKMARK FIXTURE".utf8),
                 "NSNavLastRootDirectory": "PUBLIC DIRECTORY FIXTURE",
                 "NSWindow Frame GoToSheet": "PUBLIC FRAME FIXTURE",
@@ -22,10 +23,11 @@ import XCTest
             ], forName: name)
             AppPreferences.purgeUnexpected(in: defaults, domainName: name)
             let result = try XCTUnwrap(defaults.persistentDomain(forName: name))
-            XCTAssertEqual(Set(result.keys), ["preferredLanguage", "windowWidth", "windowHeight"])
+            XCTAssertEqual(Set(result.keys), ["preferredLanguage", "windowWidth", "windowHeight", "modelPath"])
             XCTAssertEqual(result["preferredLanguage"] as? String, "de")
             XCTAssertEqual(result["windowWidth"] as? Double, 940)
             XCTAssertEqual(result["windowHeight"] as? Double, 880)
+            XCTAssertEqual(result["modelPath"] as? String, "/PUBLIC/LOCAL/MODEL.gguf")
         }
     }
 

@@ -4,7 +4,7 @@
 
 Passphrase Memorizer ist eine eigenständige macOS-App. Sie erstellt aus einer vorhandenen BIP39- oder EFF-Wortfolge einen Reim, eine Ballade, ein Gedicht, eine Kurzgeschichte oder einen Rap. Gemma 4 E4B oder ein kompatibles lokales GGUF-Modell läuft dabei in einem eigenen isolierten nativen Prozess mit Metal-GPU-Beschleunigung und CPU-Ausweichpfad. Die App ist vom Password Generator und anderen KI-Anwendungen unabhängig. Die [Modellanleitung](docs/LOCAL_AI.de.md) erklärt den Ausweichpfad beim Start und die Grenzen der Beschleunigung.
 
-Oberfläche und Ausgabe starten auf Englisch. Deutsch ist ebenfalls verfügbar. Nur die zuletzt gewählte Sprache und die Fenstergröße werden als Einstellungen gespeichert. Modellgewichte wählst du lokal aus. Sie sind weder in Git noch im App-Archiv enthalten.
+Oberfläche und Ausgabe starten auf Englisch. Deutsch ist ebenfalls verfügbar. Die zuletzt gewählte Sprache, die Fenstergröße und der lokale Modellpfad werden als Einstellungen gespeichert. Beim Start wird das Modell erneut geprüft und automatisch angebunden. Modellgewichte wählst du lokal aus. Sie sind weder in Git noch im App-Archiv enthalten.
 
 Die App-Version steht in der Oberfläche hinter dem Namen. Die erforderlichen Wörter erscheinen in eckigen Klammern, blau und fett. Eine eingeblendete Merkhilfe bleibt bis zu zehn Minuten sichtbar. Bei Deaktivierung wird der Text weiterhin sofort verdeckt.
 
@@ -14,12 +14,12 @@ Der macOS-Release unterstützt Apple Silicon (arm64) und macOS ab Version 14. La
 
 Das passende Icon liegt in [Assets/AppIcon-1024.png](Assets/AppIcon-1024.png). Die Gestaltungsbeschreibung steht in [ICON_PROMPT.md](Assets/ICON_PROMPT.md).
 
-Der Release enthält SHA-256-, SHA3-512- und Skein-1024-1024-Prüfsummen, abgetrennte Signaturen mit RSA-4096-PSS/SHA-512 und ML-DSA-87 sowie einen separaten lokalen Hybrid-Signer. App-ZIP, Integritätsmanifest, Bundle-Inventar und Signer-ZIP müssen jeweils beide Signaturen bestehen. Die [Anleitung zur Hybridprüfung und Signierung](docs/HYBRID_SIGNING.de.md) erklärt die erforderliche Vertrauensprüfung der öffentlichen Schlüssel. Das unveränderliche [Integritätsmanifest für v1.0.0](Signing/Releases/v1.0.0/Passphrase-Memorizer-1.0.0.integrity.txt) und die abgetrennten Signaturen sind auch im Repository enthalten. Der Signer ist von der KI-Ausführung getrennt und erhält keine Passphrasen.
+Der Release enthält SHA-256-, SHA3-512- und Skein-1024-1024-Prüfsummen, abgetrennte Signaturen mit RSA-4096-PSS/SHA-512 und ML-DSA-87 sowie einen separaten lokalen Hybrid-Signer. App-ZIP, Integritätsmanifest, Bundle-Inventar und Signer-ZIP müssen jeweils beide Signaturen bestehen. Die [Anleitung zur Hybridprüfung und Signierung](docs/HYBRID_SIGNING.de.md) erklärt die erforderliche Vertrauensprüfung der öffentlichen Schlüssel. Das unveränderliche [Integritätsmanifest für v1.0.1](Signing/Releases/v1.0.1/Passphrase-Memorizer-1.0.1.integrity.txt) und die abgetrennten Signaturen sind auch im Repository enthalten. Der Signer ist von der KI-Ausführung getrennt und erhält keine Passphrasen.
 
 ## Verwendung
 
 1. Besorge ein vertrauenswürdiges lokales GGUF-Modell, bevor du ein Geheimnis eingibst. Die [Anleitung für Gemma 4 E4B und andere Modelle](docs/LOCAL_AI.de.md) beschreibt die Einrichtung.
-2. Öffne Passphrase Memorizer, wähle das lokale Modell und trage deine vorhandenen Wörter ein.
+2. Öffne Passphrase Memorizer, wähle das lokale Modell einmal und trage deine vorhandenen Wörter ein. Weitere Starts binden den erneut geprüften Modellpfad automatisch an. Eine fehlende oder unsichere Datei bleibt gesperrt. Stelle sie für den nächsten Start am ursprünglichen Ort wieder her oder wähle ein gültiges Modell erneut aus.
 3. Wähle BIP39- oder EFF-Wortliste, Sprache und literarische Form. Erzeuge anschließend die Merkhilfe.
 4. Zeige sie nur bei geschütztem Bildschirm an. Leere die Sitzung, wenn du fertig bist.
 
@@ -31,7 +31,7 @@ Maßgeblich bleibt die ursprüngliche Wortfolge. Die Merkhilfe erhöht deren Ent
 
 Jede Generierung startet einen neuen nativen Prozess. Bevor er die Wörter annimmt, aktiviert er eine macOS-Seatbelt-Sandbox und prüft die Sperre von IPv4-/IPv6-Datenverkehr, Dateischreiben und fremden Dateilesezugriffen. Der Prozess enthält keinen HTTP-Server, Modelldownload, Browser oder Werkzeuge. Die Oberfläche kommuniziert über begrenzte Pipes, ohne Netzwerk-Endpunkt. App und KI-Prozess benötigen Hardened Runtime. Die produktive Generierung verlangt außerdem die vorgesehenen Signaturen.
 
-Chatverlauf, Prompt-Cache, Geschichte, Telemetrie, Modellpfad und Modell-Lesezeichen werden nicht absichtlich gespeichert. Leeren, Schließen und reguläres Beenden stoppen die Generierung und überschreiben kontrollierte geheime Puffer. Bei Deaktivierung wird die Anzeige verdeckt. Die Merkhilfe wird zusätzlich nach etwa 10 Minuten wieder verborgen. Kopieren und Export der Geschichte werden nicht angeboten.
+Chatverlauf, Prompt-Cache, Geschichte, Telemetrie und Modell-Lesezeichen werden nicht absichtlich gespeichert. Der ausgewählte Modellpfad bleibt als lokale Einrichtungseinstellung beim Leeren und Beenden erhalten. Leeren, Schließen und reguläres Beenden stoppen die Generierung und überschreiben kontrollierte geheime Puffer. Bei Deaktivierung wird die Anzeige verdeckt. Die Merkhilfe wird zusätzlich nach etwa 10 Minuten wieder verborgen. Kopieren und Export der Geschichte werden nicht angeboten.
 
 Eine vollständige unwiderrufliche Löschung sämtlicher Kopien in Swift, AppKit, KI-Laufzeit, GPU oder Treiber, Bildschirm, Auslagerungsdateien oder Betriebssystem lässt sich nicht garantieren. Erzwungenes Beenden kann die Bereinigung verhindern. Die eigene Sandbox verwendet eine veraltete API und muss auf dem jeweiligen macOS geprüft werden. Die Oberfläche selbst läuft ohne App Sandbox, damit der neue KI-Prozess seine strengere eigene Sandbox aktivieren kann. Der [interne Sicherheits-Audit](docs/SECURITY_AUDIT.md) beschreibt Belege und verbleibende Grenzen. Er ist keine externe Zertifizierung.
 
@@ -50,8 +50,8 @@ Die nativen Transport-Integrationstests benötigen `RUNTIME_TEST_SIGN_IDENTITY` 
 Der erste Befehl lädt ausdrücklich die festgelegte llama.cpp-Version. Spätere Builds verwenden `./Scripts/build-local-ai.sh` ohne Download. Das Paketierungsskript baut Swift im Release-Modus mit Warnungen als Fehlern, baut den nativen Prozess, entfernt externe Build-Pfade, kopiert Wortlisten und Lizenzhinweise und signiert zuerst den KI-Prozess und dann die App. Die Ergebnisse sind:
 
 - `build/Passphrase Memorizer.app`
-- `build/Passphrase-Memorizer-1.0.0.zip`
-- `build/Passphrase-Memorizer-1.0.0.zip.sha256`
+- `build/Passphrase-Memorizer-1.0.1.zip`
+- `build/Passphrase-Memorizer-1.0.1.zip.sha256`
 
 Ein Entwicklungsbuild wird standardmäßig ausdrücklich ad hoc signiert. Die nativen Sandbox-Prüfungen lassen sich damit ausführen. Die produktive Generierung in der Oberfläche lehnt diese Signatur absichtlich ab. Für einen Produktionsbuild ist das konfigurierte Developer-ID-Team `2T6K9PGS55` erforderlich. Ein Fork mit anderem Team muss beide Signaturrichtlinien bewusst prüfen und anpassen.
 

@@ -59,7 +59,7 @@ def signer_archive(change=None, update_inventory=False):
     native = bytes.fromhex("cffaedfe0c000001") + bytes(24)
     files = {
         "Contents/Info.plist": (plistlib.dumps({"CFBundleIdentifier": V.SIGNER_PRODUCT_ID,
-            "CFBundleShortVersionString": V.VERSION, "CFBundleVersion": V.BUILD,
+            "CFBundleShortVersionString": V.SIGNER_VERSION, "CFBundleVersion": V.SIGNER_BUILD,
             "CFBundleExecutable": V.SIGNER_HOST}), 0o644),
         "Contents/MacOS/" + V.SIGNER_HOST: (single_file_host(), 0o755),
         "Contents/MacOS/libmldsa87_ref.dylib": (native, 0o644),
@@ -92,7 +92,7 @@ def signer_archive(change=None, update_inventory=False):
             else:
                 records.append(V.file_record(relative, content, stat.S_IMODE(item.external_attr >> 16)))
         return V.canonical_json({"schema": "passphrase-memorizer-signer-inventory-v1",
-            "product_id": V.SIGNER_PRODUCT_ID, "version": V.VERSION, "build": V.BUILD,
+            "product_id": V.SIGNER_PRODUCT_ID, "version": V.SIGNER_VERSION, "build": V.SIGNER_BUILD,
             "app_name": V.SIGNER_APP_NAME, "files": sorted(records, key=lambda record: record["path"]),
             "directories": sorted(directories)})
     inventory_data = inventory()
@@ -125,6 +125,27 @@ def mutate_archive(data, mutation):
 
 
 class HybridFormatTests(unittest.TestCase):
+    def testAppAndSignerVersionPoliciesAreIndependentAndLegacyExplicit(self):
+        self.assertEqual(V.release_targets()[0], "Passphrase-Memorizer-1.0.1.zip")
+        self.assertEqual(V.release_targets()[3], "Passphrase-Memorizer-HybridSigner-1.0.0.zip")
+        signer_inventory = V.verify_signer_zip(signer_archive())
+        self.assertEqual(signer_inventory["version"], "1.0.0")
+        self.assertEqual(signer_inventory["build"], "1")
+        with self.assertRaises(V.VerificationError):
+            V.verify_signer_zip(signer_archive(), version="1.0.1", build="2")
+        legacy = plistlib.dumps({"CFBundleIdentifier": V.PRODUCT_ID,
+            "CFBundleExecutable": "MnemonicStoryApp", "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "1"})
+        V.check_metadata(legacy, version="1.0.0", build="1")
+        with self.assertRaises(V.VerificationError):
+            V.check_metadata(legacy)
+        new = plistlib.dumps({"CFBundleIdentifier": V.PRODUCT_ID,
+            "CFBundleExecutable": "MnemonicStoryApp", "CFBundleShortVersionString": "1.0.1", "CFBundleVersion": "2"})
+        V.check_metadata(new)
+        for version, build in (("../1.0.0", "1"), ("1.0.0/extra", "1"), ("1.0", "1"),
+                               ("01.0.0", "1"), ("1.0.0", "0"), ("1.0.0", "../2")):
+            with self.subTest(version=version, build=build), self.assertRaises(V.VerificationError):
+                V.validate_identity(version, build)
+
     def testEnvelopeLengthAndDigestCannotBeSwappedOrExtended(self):
         artifact = b"PUBLIC ENVELOPE FIXTURE"
         cert, rsa, ml = b"public certificate fixture", bytes(512), bytes(4627)
