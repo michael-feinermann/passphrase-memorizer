@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <RuntimeFrameworkVersion>10.0.12</RuntimeFrameworkVersion>
+  </PropertyGroup>
+</Project>

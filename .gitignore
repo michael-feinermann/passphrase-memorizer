@@ -19,3 +19,13 @@ __pycache__/
 *.enc
 *wrapping-key*.b64
 !Signing/mldsa87-public.bin
+**/bin/
+**/obj/
+*.dpapi
+*.private.key
+*.private.pem
+*.private.der
+*.user
+*.suo
+!Windows/Crypto/Trust/*.bin
+Windows/Signing/build-reference/

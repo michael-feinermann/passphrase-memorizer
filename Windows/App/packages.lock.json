@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "xi+BDjFpW+Sb+MHFHaH6Y/gV9I8BluFwRXc1QyCdoZbIK26eNiBeFuMTe/FMwc33G1wdHCyDg7CVTmb8OdQrMQ=="
+      },
+      "BouncyCastle.Cryptography": {
+        "type": "Transitive",
+        "resolved": "2.6.2",
+        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+      },
+      "passphrasememorizer.core": {
+        "type": "Project"
+      },
+      "passphrasememorizer.crypto": {
+        "type": "Project",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "[2.6.2, 2.6.2]"
+        }
+      },
+      "passphrasememorizer.runtime": {
+        "type": "Project",
+        "dependencies": {
+          "PassphraseMemorizer.Core": "[1.0.0, )",
+          "PassphraseMemorizer.Crypto": "[1.0.0, )"
+        }
+      }
+    },
+    "net10.0-windows7.0/win-x64": {}
+  }
+}

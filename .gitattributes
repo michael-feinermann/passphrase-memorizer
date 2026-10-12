@@ -10,3 +10,7 @@ Tests/Reference/Skein/skein_block.c -text whitespace=-trailing-space
 Tests/Reference/Skein/skein_port.h -text whitespace=-trailing-space
 # Signatures bind bytes, so checkout must not translate their line endings.
 Signing/Releases/** -text
+# Word-list hashes are pinned across macOS and Windows checkouts.
+Sources/MnemonicStoryCore/Resources/*.txt -text
+Windows/Crypto/Trust/** -text
+Windows/Crypto/Trust/trust.json text eol=crlf

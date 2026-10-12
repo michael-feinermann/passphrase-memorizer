@@ -23,6 +23,10 @@ The native worker statically links the native implementation from [llama.cpp rev
 
 The pinned revision's [root license](https://github.com/ggml-org/llama.cpp/blob/8e1642198dcd4e408f8776222d6ae31b74d01187/LICENSE) covers the incorporated ggml source and is copied into `Contents/Resources/Licenses/llama.cpp-LICENSE.txt` when packaging. No model weights, dynamic backend plugins, HTTP server or conversion tools are included in the app.
 
+## Windows distribution
+
+The Windows worker links the same pinned llama.cpp revision statically; its license is packaged at `Licenses/llama.cpp-LICENSE.txt`. Bouncy Castle C# 2.6.2 provides ML-DSA-87, SHA3-512 and Skein-1024-1024 under its MIT license; its notice is included in the Windows package. The self-contained WPF package includes Microsoft's .NET 10 runtime and its distributed license and third-party notices. No native HTTP server, model weights or dynamic model-backend plugins are packaged. Public test signing interoperability uses the already vendored pinned pq-crystals reference under `Signing/HybridSigner/Reference/LICENSE`.
+
 ## Model weights
 
 Models are installed separately by the user. This repository and its application archive contain no model weights. Gemma models have their own [Google Gemma terms](https://ai.google.dev/gemma/terms). Other models have their publishers' licenses. The application's MIT license does not grant rights to model weights.

@@ -1,0 +1,13 @@
+name: Windows checks
+on: [push, pull_request]
+jobs:
+  core-and-signing:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet run --project Windows/Tests/PassphraseMemorizer.Tests.csproj -c Release
+      - run: Windows/Signing/test-signing.ps1
+      - run: dotnet build Windows/App/PassphraseMemorizer.App.csproj -c Release -p:RestoreLockedMode=true -warnaserror
