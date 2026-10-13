@@ -46,7 +46,7 @@ python3 -I Scripts/verify-hybrid-signatures.py \
 
 `--app` additionally compares the installed app with the signed inventory. Leave it out to verify the downloaded release alone. Successful complete verification reports twelve hybrid envelopes and checks both algorithms, public-key fingerprints, certificate policy, all hashes, product/version, ZIP safety and complete inventories. Apple signature, notarization and Gatekeeper checks remain separate; reproduce them with the [release verifier](../Scripts/verify-release.sh).
 
-On the verified installation, public assets and tools reside in `/Applications/Passphrase Memorizer 1.0.1.signatures`, and the separate Signer is `/Applications/Passphrase Memorizer Hybrid Signer.app`. The mnemonic app remains `/Applications/Passphrase Memorizer.app`. None of these public verification tools needs the private key volume or the AI model.
+On the verified installation, public assets and tools reside in `$HOME/Library/Application Support/Passphrase Memorizer Release Tools/Passphrase Memorizer 1.0.1.signatures`. The separate Signer is stored alongside them as `Passphrase Memorizer Hybrid Signer.app`; pass its absolute `Contents/MacOS` path to the wrapper below. Only the mnemonic app is shown in Applications at `/Applications/Passphrase Memorizer.app`. None of these public verification tools needs the private key volume or the AI model.
 
 ## Compute hashes or use the Signer
 

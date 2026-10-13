@@ -46,7 +46,7 @@ python3 -I Scripts/verify-hybrid-signatures.py \
 
 `--app` vergleicht zusätzlich die installierte App mit dem signierten Inventar. Lass diese Option weg, um nur das heruntergeladene Release zu prüfen. Eine vollständige erfolgreiche Prüfung bestätigt zwölf hybride Signaturdateien und prüft beide Verfahren, öffentliche Fingerabdrücke, Zertifikatsrichtlinie, alle Prüfsummen, Produkt und Version, sichere ZIP-Inhalte und vollständige Inventare. Apples Signatur-, Notarisierungs- und Gatekeeper-Prüfungen bleiben zusätzlich erforderlich. Der [Release-Verifier](../Scripts/verify-release.sh) führt sie aus.
 
-In der geprüften Installation liegen öffentliche Assets und Werkzeuge unter `/Applications/Passphrase Memorizer 1.0.1.signatures`. Der eigenständige Signer liegt unter `/Applications/Passphrase Memorizer Hybrid Signer.app`, die Merkhilfe-App weiterhin unter `/Applications/Passphrase Memorizer.app`. Die öffentlichen Prüfwerkzeuge benötigen weder das private Schlüsselvolume noch das KI-Modell.
+In der geprüften Installation liegen öffentliche Assets und Werkzeuge unter `$HOME/Library/Application Support/Passphrase Memorizer Release Tools/Passphrase Memorizer 1.0.1.signatures`. Der eigenständige Signer liegt daneben als `Passphrase Memorizer Hybrid Signer.app`; sein absoluter Pfad zu `Contents/MacOS` wird dem unten beschriebenen Wrapper übergeben. Unter Programme wird nur die Merkhilfe-App unter `/Applications/Passphrase Memorizer.app` angezeigt. Die öffentlichen Prüfwerkzeuge benötigen weder das private Schlüsselvolume noch das KI-Modell.
 
 ## Prüfsummen berechnen oder den Signer verwenden
 
