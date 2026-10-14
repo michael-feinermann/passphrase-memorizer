@@ -63,7 +63,11 @@ internal sealed class SandboxProcess : IDisposable
             // The active-process-limit job below denies children before the
             // suspended process runs. The additional child-policy attribute
             // prevents Windows DLL initialization on the tested Windows host.
-            ulong mitigations = 1UL | (1UL << 8) | (1UL << 12) | (1UL << 24) | (1UL << 28) | (1UL << 32) | (1UL << 36);
+            // CUDA under WDDM needs Win32k graphics system calls. The CPU build
+            // disabled them (bit 28); retain every other mitigation, the LPAC
+            // token, the single registryRead capability and the mandatory live
+            // network/filesystem/registry/child-process denial probes.
+            ulong mitigations = 1UL | (1UL << 8) | (1UL << 12) | (1UL << 24) | (1UL << 32) | (1UL << 36);
             Attribute(0x20007, Allocate(mitigations), sizeof(ulong));
             var startup = new NativeMethods.StartupInfoEx { Attributes = list };
             startup.Startup.Size = Marshal.SizeOf<NativeMethods.StartupInfoEx>();

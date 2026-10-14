@@ -37,7 +37,7 @@ internal static class PublicFixtureTests
                 var sandboxResult = await new RunnerClient().SelfTestAsync(modelPath, cancellation.Token);
                 using var report = JsonDocument.Parse(sandboxResult);
                 var root = report.RootElement;
-                bool passed = root.GetProperty("sandbox").GetString() == "passed" &&
+                bool passed = root.GetProperty("sandbox").GetString() == "passed" && root.GetProperty("backend").GetString() == "CUDA" &&
                     root.GetProperty("ipv4").GetString() == "denied" && root.GetProperty("ipv6").GetString() == "denied" &&
                     root.GetProperty("writes").GetString() == "denied" && root.GetProperty("unrelated_reads").GetString() == "denied" &&
                     root.GetProperty("model_writes").GetString() == "denied" &&
@@ -52,7 +52,8 @@ internal static class PublicFixtureTests
             }
             catch { Console.WriteLine("PUBLIC_FIXTURE_RESULT FAIL sandbox"); return 1; }
         }
-        if (args.Contains("--cancel-test")) cancellation.CancelAfter(TimeSpan.FromSeconds(2));
+        bool gpuReadyObserved = false;
+        var cancelClock = new Stopwatch();
         var lexicon = new PhraseLexicon();
         using var phrase = lexicon.Parse("abandon ability able", PhraseFormat.Bip39);
         // A short public fixture exercises real inference and ordered markers
@@ -60,9 +61,11 @@ internal static class PublicFixtureTests
         var prompt = phrase.BuildPrompt(LiteraryStyle.ShortStory, "en")
             .Replace("Keep the text under 1600 words.", "Keep the text under 60 words.", StringComparison.Ordinal);
         string result = "";
+        GpuExecutionReport? placement = null;
         try
         {
-            result = await new RunnerClient().GenerateAsync(modelPath, prompt, phrase.Words, cancellation.Token);
+            result = await new RunnerClient().GenerateAsync(modelPath, prompt, phrase.Words, cancellation.Token, proof => placement = proof,
+                () => { gpuReadyObserved = true; if (args.Contains("--cancel-test")) { cancelClock.Start(); cancellation.CancelAfter(TimeSpan.FromMilliseconds(200)); } });
             if (args.Contains("--cancel-test"))
             {
                 Console.WriteLine("PUBLIC_FIXTURE_RESULT FAIL cancellation_not_observed");
@@ -73,14 +76,16 @@ internal static class PublicFixtureTests
                 Console.WriteLine($"PUBLIC_FIXTURE_RESULT FAIL story_validation elapsed_seconds={clock.Elapsed.TotalSeconds:F1}");
                 return 1;
             }
+            if (placement is null) { Console.WriteLine("PUBLIC_FIXTURE_RESULT FAIL gpu_proof"); return 1; }
+            Console.WriteLine("PUBLIC_GPU_PLACEMENT " + JsonSerializer.Serialize(placement));
             Console.WriteLine($"PUBLIC_FIXTURE_RESULT PASS native_generation=True marked_words=3 elapsed_seconds={clock.Elapsed.TotalSeconds:F1}");
             return 0;
         }
         catch (OperationCanceledException)
         {
-            if (args.Contains("--cancel-test"))
+            if (args.Contains("--cancel-test") && gpuReadyObserved && cancelClock.Elapsed < TimeSpan.FromSeconds(5))
             {
-                Console.WriteLine($"PUBLIC_FIXTURE_RESULT PASS cancelled elapsed_seconds={clock.Elapsed.TotalSeconds:F1}");
+                Console.WriteLine($"PUBLIC_FIXTURE_RESULT PASS cancelled gpu_ready=True cancellation_seconds={cancelClock.Elapsed.TotalSeconds:F1} elapsed_seconds={clock.Elapsed.TotalSeconds:F1}");
                 return 0;
             }
             Console.WriteLine("PUBLIC_FIXTURE_RESULT FAIL cancelled_or_deadline");

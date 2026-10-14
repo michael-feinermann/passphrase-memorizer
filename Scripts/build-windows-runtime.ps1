@@ -22,11 +22,20 @@ if (!(Test-Path -LiteralPath (Join-Path $source '.git'))) {
 }
 if ((& git -C $source rev-parse HEAD) -ne $revision) { throw 'llama.cpp revision mismatch.' }
 if (& git -C $source status --porcelain) { throw 'Pinned llama.cpp source contains local changes.' }
-$nativeBuild = Join-Path $buildRoot 'build'
-& $cmake -S (Join-Path $projectRoot 'Native\WindowsMnemonicRunner') -B $nativeBuild -G 'Visual Studio 17 2022' -A x64 "-DLLAMA_SOURCE_DIR=$source" -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_AVX512=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+$nativeBuild = Join-Path $buildRoot 'build-cuda'
+$cudaRoot = 'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2'
+if (!(Test-Path -LiteralPath (Join-Path $cudaRoot 'bin\nvcc.exe'))) { throw 'The locally installed CUDA 13.2 toolkit is required.' }
+& $cmake -S (Join-Path $projectRoot 'Native\WindowsMnemonicRunner') -B $nativeBuild -G 'Visual Studio 17 2022' -A x64 "-Tcuda=$cudaRoot" "-DLLAMA_SOURCE_DIR=$source" "-DCUDAToolkit_ROOT=$cudaRoot" -DCMAKE_CUDA_ARCHITECTURES=89-real -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_AVX512=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 if ($LASTEXITCODE) { throw 'Native runtime configuration failed.' }
-& $cmake --build $nativeBuild --config Release --target WindowsMnemonicRunner --parallel 8
+& $cmake --build $nativeBuild --config Release --target WindowsMnemonicRunner --parallel 8 -- /verbosity:minimal
 if ($LASTEXITCODE) { throw 'Native runtime build failed.' }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $nativeBuild 'Release\WindowsMnemonicRunner.exe') -Destination $OutputDirectory -Force
+foreach ($dll in @('cublas64_13.dll', 'cublasLt64_13.dll')) {
+    $sourceDll = Join-Path $cudaRoot "bin\x64\$dll"
+    if (!(Test-Path -LiteralPath $sourceDll)) { throw "Required NVIDIA redistribution file is missing: $dll" }
+    $signature = Get-AuthenticodeSignature -LiteralPath $sourceDll
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'NVIDIA Corporation') { throw "The NVIDIA signature is invalid: $dll" }
+    Copy-Item -LiteralPath $sourceDll -Destination (Join-Path $OutputDirectory $dll) -Force
+}
 Write-Output ([IO.Path]::GetFullPath((Join-Path $OutputDirectory 'WindowsMnemonicRunner.exe')))

@@ -25,6 +25,8 @@ The pinned revision's [root license](https://github.com/ggml-org/llama.cpp/blob/
 
 ## Windows distribution
 
+The CUDA Windows worker additionally uses the installed NVIDIA CUDA Toolkit 13.2. Its static CUDA runtime and unmodified NVIDIA-signed `cublas64_13.dll` / `cublasLt64_13.dll` are redistributed with the toolkit's license and third-party notices at `Licenses/NVIDIA-CUDA-EULA.txt`. They remain under NVIDIA's terms, separate from this application's MIT license. No NVIDIA driver or NVAPI DLL is redistributed; the checked system driver provides those. The small profile helper uses ABI facts and hidden-setting mappings documented by NVIDIA's installed App and the original [NVIDIA Profile Inspector implementation](https://github.com/Orbmu2k/nvidiaProfileInspector).
+
 The Windows worker links the same pinned llama.cpp revision statically; its license is packaged at `Licenses/llama.cpp-LICENSE.txt`. Bouncy Castle C# 2.6.2 provides ML-DSA-87, SHA3-512 and Skein-1024-1024 under its MIT license; its notice is included in the Windows package. The self-contained WPF package includes Microsoft's .NET 10 runtime and its distributed license and third-party notices. No native HTTP server, model weights or dynamic model-backend plugins are packaged. Public test signing interoperability uses the already vendored pinned pq-crystals reference under `Signing/HybridSigner/Reference/LICENSE`.
 
 ## Model weights

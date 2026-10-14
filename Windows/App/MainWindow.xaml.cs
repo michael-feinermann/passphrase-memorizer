@@ -130,7 +130,7 @@ public partial class MainWindow : Window
     {
         HeaderSubtitle.Text = Tr("Private Merkhilfen für BIP39 und EFF. Lokal auf deinem Windows-PC.", "Private memory aids for BIP39 and EFF. Locally on your Windows PC.");
         IsolationTitle.Text = Tr("Abgesicherte Offline-Ausführung", "Protected offline execution");
-        IsolationText.Text = Tr("Separater nativer CPU-Prozess in einer Windows-AppContainer. Netzwerk- und Schreibsperren werden vor der Übertragung geheimer Wörter geprüft. Unabhängig von anderen KI-Apps, ohne Cloudkonto.", "Separate native CPU process in a Windows AppContainer. Network and write restrictions are checked before secret words are transferred. Independent of other AI apps, with no cloud account.");
+        IsolationText.Text = Tr("Lokale CUDA-Ausführung auf der NVIDIA-GPU. Modellgewichte und KI-Cache liegen im Grafikspeicher. Netzwerk- und Schreibsperren werden vor der Übertragung geheimer Wörter geprüft. Ohne Cloudkonto.", "Local CUDA execution on the NVIDIA GPU. Model weights and AI cache reside in GPU memory. Network and write restrictions are checked before secret words are transferred. No cloud account.");
         PhraseTitle.Text = Tr("Geheime Wörter eingeben", "Enter your secret words");
         PhraseSubtitle.Text = Tr("Die Wörter bleiben ausschließlich in dieser Sitzung.", "The words stay in this session only.");
         PhraseHelp.Text = Format == PhraseFormat.Bip39
@@ -240,7 +240,7 @@ public partial class MainWindow : Window
         catch (OperationCanceledException)
         { if (!_closing && id == _generationId) ShowError(Tr("Die Generierung wurde abgebrochen.", "Generation was cancelled.")); }
         catch
-        { if (!_closing && id == _generationId) ShowError(Tr("Die lokale Generierung wurde sicher abgebrochen. Prüfe Installation, Modell, Arbeitsspeicher und Laufzeit. Es wurde kein Verlauf gespeichert.", "Local generation stopped safely. Check the installation, model, available memory and runtime. No history was saved.")); }
+        { if (!_closing && id == _generationId) ShowError(Tr("Die GPU-Generierung wurde sicher abgebrochen. Prüfe Installation, NVIDIA-Treiber, Modell und freien Grafikspeicher. Es wird nicht auf CPU-Ausführung ausgewichen. Es wurde kein Verlauf gespeichert.", "GPU generation stopped safely. Check the installation, NVIDIA driver, model and free GPU memory. CPU execution is not used as a fallback. No history was saved.")); }
         finally
         {
             prompt = ""; result = "";

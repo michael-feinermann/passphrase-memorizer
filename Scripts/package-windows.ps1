@@ -2,7 +2,8 @@
 param(
     [string]$KeyDirectory = 'A:\Passphrase Memorizer Keys',
     [switch]$SkipNativeBuild,
-    [switch]$SkipArchive
+    [switch]$SkipArchive,
+    [string]$ArchiveName = 'Passphrase-Memorizer-1.0.1-Windows-CUDA-x64.zip'
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -21,12 +22,17 @@ if ($LASTEXITCODE) { throw 'Locked application restore failed.' }
 if ($LASTEXITCODE) { throw 'Windows application publish failed.' }
 $native = Join-Path $candidate 'native'
 New-Item -ItemType Directory -Path $native -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $root '.build\windows-runtime\dist\WindowsMnemonicRunner.exe') -Destination $native
+foreach ($fileName in @('WindowsMnemonicRunner.exe','cublas64_13.dll','cublasLt64_13.dll')) {
+    $nativePayload = Join-Path $root ('.build\windows-runtime\dist\' + $fileName)
+    if (!(Test-Path -LiteralPath $nativePayload)) { throw ('Missing required CUDA payload: ' + $fileName) }
+    Copy-Item -LiteralPath $nativePayload -Destination $native
+}
 $licenses = Join-Path $candidate 'Licenses'
 New-Item -ItemType Directory -Path $licenses -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE'),(Join-Path $root 'THIRD_PARTY_NOTICES.md') -Destination $licenses
 Copy-Item -LiteralPath (Join-Path $root 'Licenses\python-mnemonic-MIT.txt') -Destination $licenses
 Copy-Item -LiteralPath (Join-Path $root '.build\windows-runtime\source\LICENSE') -Destination (Join-Path $licenses 'llama.cpp-LICENSE.txt')
+Copy-Item -LiteralPath 'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\EULA.txt' -Destination (Join-Path $licenses 'NVIDIA-CUDA-EULA.txt')
 $packageRoot = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $env:USERPROFILE '.nuget\packages' }
 Copy-Item -LiteralPath (Join-Path $packageRoot 'bouncycastle.cryptography\2.6.2\LICENSE.md') -Destination (Join-Path $licenses 'BouncyCastle-LICENSE.md')
 Copy-Item -LiteralPath (Join-Path $packageRoot 'microsoft.netcore.app.runtime.win-x64\10.0.12\LICENSE.TXT') -Destination (Join-Path $licenses 'Microsoft.NET-LICENSE.TXT')
@@ -39,7 +45,8 @@ if ($LASTEXITCODE) { throw 'Dual release signing failed.' }
 & dotnet run --project $signerProject -c Release -- verify --bundle $candidate
 if ($LASTEXITCODE) { throw 'Dual signed bundle verification failed.' }
 if ($SkipArchive) { [pscustomobject]@{ Bundle = $candidate; status = 'signed-candidate' } | ConvertTo-Json -Compress; return }
-$archive = Join-Path $root 'build\Passphrase-Memorizer-1.0.1-Windows-x64.zip'
+if ($ArchiveName -notmatch '^Passphrase-Memorizer-1\.0\.1-Windows-(CUDA-)?x64\.zip$') { throw 'Invalid Windows archive name.' }
+$archive = Join-Path $root ('build\' + $ArchiveName)
 New-Item -ItemType Directory -Path (Split-Path $archive -Parent) -Force | Out-Null
 if (Test-Path -LiteralPath $archive) { throw 'Archive already exists; keep or rename the previous release before packaging.' }
 Compress-Archive -LiteralPath (Get-ChildItem -LiteralPath $candidate -Force).FullName -DestinationPath $archive -CompressionLevel Optimal

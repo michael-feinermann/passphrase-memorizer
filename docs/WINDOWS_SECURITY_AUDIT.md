@@ -1,5 +1,7 @@
 # Windows v1.0.1 internal security audit
 
+Historical report for the original CPU Windows package. The current CUDA version is documented in the [GPU security audit](WINDOWS_GPU_SECURITY_AUDIT.md).
+
 Audit date: 12 October 2026. Source baseline: upstream `v1.0.1`, with macOS source and release-signing trust preserved. Scope: the WPF Windows x64 port, its native CPU worker, local Gemma 4 31B integration, Windows signing/key provisioning and per-user installer. This is an internal engineering audit, not independent certification.
 
 Live host: Windows 11 Education 26H2, build **26300.9550**, Intel Core i9-13900K and 31.7 GiB reported physical RAM. Isolation results below apply to this observed host. Other Windows builds must pass the same mandatory checks before accepting a prompt.

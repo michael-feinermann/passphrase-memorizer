@@ -1,8 +1,8 @@
 # Passphrase Memorizer
 
-A Windows x64 port of v1.0.1 is included in [`Windows/`](Windows/), with WPF, an isolated native CPU worker and support for the installed Gemma 4 31B GGUF. See the [Windows guide](docs/WINDOWS.md) and [Windows security audit](docs/WINDOWS_SECURITY_AUDIT.md). The sections below describe the macOS version.
+A Windows x64 port of v1.0.1 is included in [`Windows/`](Windows/), with WPF and an isolated CUDA worker for the installed Gemma 4 31B GGUF. Model weights and KV cache run on the GPU, with CPU and shared-memory fallback disabled. The tested build targets an NVIDIA RTX 4090 with 24 GiB VRAM. See the [Windows guide](docs/WINDOWS.md) and [Windows GPU security audit](docs/WINDOWS_GPU_SECURITY_AUDIT.md). The sections below describe the macOS version.
 
-[Download the signed Windows 1.0.1 package](https://github.com/michael-feinermann/passphrase-memorizer/releases/download/v1.0.1/Passphrase-Memorizer-1.0.1-Windows-x64.zip). Its RSA-4096/ML-DSA-87 signatures and three-hash fingerprint file are attached to the [1.0.1 release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1).
+[Download the signed Windows CUDA 1.0.1 package](https://github.com/michael-feinermann/passphrase-memorizer/releases/download/v1.0.1/Passphrase-Memorizer-1.0.1-Windows-CUDA-x64.zip). Its RSA-4096/ML-DSA-87 signatures and three-hash fingerprint file are attached to the [1.0.1 release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1). Small host buffers, the UI and temporary model upload staging still require RAM.
 
 English | [Deutsch](README.de.md)
 
