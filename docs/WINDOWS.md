@@ -2,6 +2,8 @@
 
 The WPF port preserves the v1.0.1 features and visual layout: English/German, BIP39/EFF word lists, 1–128 words, five literary styles, exact bold blue `[word]` markers, ordered repeated words, temporary ten-minute reveal, concealment on deactivation, clear/cancel/quit cleanup and preferences limited to language, dimensions and model path.
 
+[Download the Windows ZIP and its verification files](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1). Extract the whole archive to a local NTFS folder and run `Passphrase Memorizer.exe`, keeping every payload and signature file together. Direct execution includes its runtime and needs no .NET SDK; the repository's per-user installation script requires the documented build prerequisites.
+
 Windows uses its own static native CPU worker in an AppContainer without network capabilities. This build has no GPU backend. It reads the installed Gemma 4 31B GGUF directly; it does not contact Ollama or another HTTP service. Model weights are never included in Git or the app bundle. The Windows package includes .NET 10 and installs per-user with Start Menu/Desktop shortcuts and a Windows uninstall entry.
 
 See the [German Windows instructions](WINDOWS.de.md) for the installed model, build/package/install commands and signature verification. The [Windows security audit](WINDOWS_SECURITY_AUDIT.md) records validation evidence and limitations.

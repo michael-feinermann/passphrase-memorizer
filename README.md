@@ -2,6 +2,8 @@
 
 A Windows x64 port of v1.0.1 is included in [`Windows/`](Windows/), with WPF, an isolated native CPU worker and support for the installed Gemma 4 31B GGUF. See the [Windows guide](docs/WINDOWS.md) and [Windows security audit](docs/WINDOWS_SECURITY_AUDIT.md). The sections below describe the macOS version.
 
+[Download the signed Windows 1.0.1 package](https://github.com/michael-feinermann/passphrase-memorizer/releases/download/v1.0.1/Passphrase-Memorizer-1.0.1-Windows-x64.zip). Its RSA-4096/ML-DSA-87 signatures and three-hash fingerprint file are attached to the [1.0.1 release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1).
+
 English | [Deutsch](README.de.md)
 
 Passphrase Memorizer is a separate macOS app for turning an existing BIP39 or EFF word sequence into a rhyme, ballad, poem, short story, or rap. It runs Gemma 4 E4B or a compatible local GGUF through its own isolated native worker with Metal GPU acceleration and CPU fallback. It is independent of Password Generator and other AI applications. The [model setup guide](docs/LOCAL_AI.md) explains startup fallback and acceleration limits.

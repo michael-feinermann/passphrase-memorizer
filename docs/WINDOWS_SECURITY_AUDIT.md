@@ -30,6 +30,14 @@ Final local artifact: `build/Passphrase-Memorizer-1.0.1-Windows-x64.zip`, **66,8
 SHA-256: 1f951fde6ed05caa1494153ee3cf0e4b768729d2b142d1dd968e60ae08ef0199
 ```
 
+## Completion verification on 14 October 2026
+
+The installed copy and unchanged archive were reverified against the embedded public trust keys. Independent SHA-256/SHA3-512/Skein reference checks passed again; all 54 ZIP entries, including signature metadata, matched the installed files. The installed UI, sandbox and cancellation fixtures passed; a fresh complete public Gemma 4 31B generation passed in **83.5 seconds**. No runner processes or temporary runner profiles remained after completion. Start Menu/Desktop targets and uninstall version 1.0.1 remained correct.
+
+The Windows ZIP and its four verification sidecars (`.hashes.json`, `.rsa.sig`, `.mldsa.sig`, `.sha256`) were added to the [existing 1.0.1 GitHub release](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1). GitHub reported SHA-256, length and uploaded state matching all five local files. Windows build source is commit `42a5201db6e66d38906e744074b8dfe04b54ea10`; the existing macOS version tag and its assets were retained. Later documentation changes do not alter the signed Windows binaries. GitHub Windows checks passed for the build commit and subsequent macOS documentation commit `a6a20f1`.
+
+Drive `A:` was not mounted during this completion check. The existing archive needed no new signature; public-key verification does not require the private keys. The 12 October key-provisioning evidence above remains historical evidence; private key files could not be rechecked while the drive was unavailable. No new keys were generated.
+
 ## Security design
 
 Before accepting normal UI input, the app verifies both signatures on the complete inventory and every payload and retains read handles without write/delete sharing. Before sending any prompt byte, the supervisor repeats verification, requires the inventoried native helper, starts it suspended, checks the actual process-image path and assigns a kill-on-close job. Signature policy uses embedded public-key SHA-256 pins. Archive signatures bind filename, length and SHA-256/SHA3-512/Skein-1024-1024 fingerprints. Modified, missing or additional payloads, malformed inventories, path traversal, device names and reparse paths fail closed.

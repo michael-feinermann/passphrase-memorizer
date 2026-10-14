@@ -4,6 +4,8 @@ Die Windows-Version übernimmt die Funktionen und Gestaltung von `v1.0.1`: BIP39
 
 ## Installation und Modell
 
+Das [Windows-ZIP mit Signaturdateien](https://github.com/michael-feinermann/passphrase-memorizer/releases/tag/v1.0.1) ist als fertiger Download verfügbar. Entpacke das gesamte Archiv in einen lokalen NTFS-Ordner und öffne `Passphrase Memorizer.exe`; behalte alle Paket- und Signaturdateien zusammen. Für diese direkte Ausführung ist kein .NET SDK nötig. Die unten dokumentierte Installation mit Verknüpfungen und Deinstallationseintrag verwendet dagegen das Repository-Skript und benötigt die Build-Voraussetzungen.
+
 Der Build ist für Windows 11 x64 und lokale NTFS-Modelldateien ausgelegt. Das App-Paket enthält die .NET-10-Laufzeit. Modellgewichte sind separat und werden nicht heruntergeladen. Die Installation liegt unter `%LOCALAPPDATA%\Programs\Passphrase Memorizer`; Verknüpfungen werden im Startmenü und auf dem Desktop angelegt. Die Deinstallation ist über Windows' installierte Apps verfügbar.
 
 Auf diesem PC wird die vorhandene Gemma-4-31B-GGUF-Datei direkt verwendet:
